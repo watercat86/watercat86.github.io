@@ -2,388 +2,457 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>狂気の創作料理生成器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAME PORTAL</title>
 <style>
-@font-face {
-  font-family: 'system';
-}
-:root{
-  --bg: #12100e;
-  --paper: #1c1815;
-  --ink: #f0e6d2;
-  --accent: #ff4d3d;
-  --accent2: #8fae5c;
-  --gold: #c9a04a;
-}
-*{box-sizing:border-box;}
-html,body{
-  margin:0;
-  min-height:100vh;
-  background:
-    radial-gradient(ellipse at top left, #221b14 0%, transparent 60%),
-    radial-gradient(ellipse at bottom right, #1a1410 0%, transparent 60%),
-    var(--bg);
-  color:var(--ink);
-  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding: 40px 16px 80px;
-}
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap');
 
-.title-block{
-  text-align:center;
-  margin-bottom: 28px;
-}
-.eyebrow{
-  letter-spacing: 0.5em;
-  font-size: 11px;
-  color: var(--gold);
-  opacity:0.8;
-}
-h1{
-  font-size: clamp(24px, 5vw, 40px);
-  margin: 8px 0 4px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-}
-h1 .flame{
-  color: var(--accent);
-}
-.subtitle{
-  font-size: 13px;
-  color: #a89b82;
-  font-family: sans-serif;
-  letter-spacing: 0.05em;
-}
+  :root{
+    --bg: #0d0e14;
+    --panel: #15171f;
+    --line: #2a2d3a;
+    --cyan: #4de8e0;
+    --magenta: #ff4fa3;
+    --yellow: #ffd23f;
+    --text: #e9ecf5;
+    --text-dim: #8890a6;
+  }
 
-.stage{
-  width: 100%;
-  max-width: 640px;
-}
+  *{ box-sizing: border-box; margin: 0; padding: 0; }
 
-.card{
-  position:relative;
-  background: var(--paper);
-  border: 1px solid #3a3128;
-  border-radius: 4px;
-  padding: 36px 28px 30px;
-  overflow: visible;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.02);
-}
-.card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
-  pointer-events:none;
-}
-.stamp{
-  position:absolute;
-  top:18px;
-  right:22px;
-  font-size:11px;
-  letter-spacing:0.2em;
-  color: var(--accent);
-  border:1px solid var(--accent);
-  padding: 3px 8px;
-  border-radius: 2px;
-  opacity:0.85;
-  transform: rotate(6deg);
-  font-family: sans-serif;
-}
+  html{ scroll-behavior: smooth; }
 
-.label{
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  color: var(--accent2);
-  font-family: sans-serif;
-  margin-bottom: 14px;
-}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
 
-.dish-name{
-  font-size: clamp(18px, 4.4vw, 28px);
-  line-height: 1.7;
-  font-weight: 700;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-}
-.dish-name .word{
-  display:inline;
-  opacity:0;
-  transform: translateY(10px);
-  animation: reveal 0.5s forwards;
-}
+  /* scanline / crt texture */
+  body::before{
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+  }
 
-@keyframes reveal{
-  to{ opacity:1; transform:translateY(0); }
-}
+  body::after{
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 51;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+  }
 
-.tag-row{
-  margin-top: 22px;
-  display:flex;
-  flex-wrap:wrap;
-  gap: 8px;
-  font-family: sans-serif;
-}
-.tag{
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 100px;
-  border: 1px solid #4a3f30;
-  color: #c9bda1;
-  letter-spacing: 0.03em;
-}
+  .pixel{ font-family: 'Press Start 2P', monospace; }
 
-.verdict{
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px dashed #4a3f30;
-  font-size: 14px;
-  color: #d8b28a;
-  font-family: sans-serif;
-  min-height: 1.4em;
-}
+  /* ---------- background grid + glow ---------- */
+  .bg-grid{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(77,232,224,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(77,232,224,0.06) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+  }
 
-.controls{
-  margin-top: 26px;
-  display:flex;
-  gap: 12px;
-  justify-content:center;
-  flex-wrap:wrap;
-}
-button{
-  font-family: sans-serif;
-  font-size: 14px;
-  letter-spacing: 0.05em;
-  padding: 14px 28px;
-  border-radius: 2px;
-  border: none;
-  cursor:pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-#generate{
-  background: var(--accent);
-  color: #1c1815;
-  font-weight: 700;
-  box-shadow: 0 6px 20px rgba(255,77,61,0.3);
-}
-#generate:hover{ transform: translateY(-2px); }
-#generate:active{ transform: translateY(0); }
-#save{
-  background: transparent;
-  color: var(--gold);
-  border: 1px solid var(--gold);
-}
-#save:hover{ background: rgba(201,160,74,0.08); }
-#save:disabled{ opacity:0.3; cursor:default; }
+  .glow-blob{
+    position: fixed;
+    z-index: 0;
+    filter: blur(90px);
+    opacity: 0.35;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .glow-1{ width: 500px; height: 500px; background: var(--magenta); top: -150px; left: -120px; }
+  .glow-2{ width: 460px; height: 460px; background: var(--cyan); bottom: -180px; right: -100px; }
 
-.archive-section{
-  width:100%;
-  max-width: 640px;
-  margin-top: 40px;
-}
-.archive-title{
-  font-family: sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.25em;
-  color:#8a7d64;
-  margin-bottom: 12px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.archive-title::after{
-  content:"";
-  flex:1;
-  height:1px;
-  background:#3a3128;
-}
-.archive-list{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-.archive-item{
-  font-size: 14px;
-  padding: 10px 14px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid #2a241d;
-  border-radius: 3px;
-  color: #cfc2a5;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap: 10px;
-}
-.archive-item span{ flex:1; }
-.archive-item button{
-  font-size: 11px;
-  padding: 4px 8px;
-  background:none;
-  border: 1px solid #4a3f30;
-  color:#8a7d64;
-}
-.empty-note{
-  font-size: 13px;
-  color: #6b5f4a;
-  font-family: sans-serif;
-}
+  main{ position: relative; z-index: 1; }
 
-footer{
-  margin-top: 50px;
-  font-size: 11px;
-  color: #5a4f3c;
-  font-family: sans-serif;
-  letter-spacing: 0.1em;
-}
+  /* ---------- header ---------- */
+  header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px 0;
+  }
 
-@media (prefers-reduced-motion: reduce){
-  .dish-name .word{ animation:none; opacity:1; transform:none; }
-}
+  .brand{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .brand-mark{
+    font-size: 13px;
+    color: var(--yellow);
+    letter-spacing: 1px;
+  }
+  .brand-name{
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .coin{
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.5px;
+  }
+  .coin-dot{
+    width: 8px; height: 8px;
+    background: var(--yellow);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--yellow);
+    animation: blink 1.6s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity: 0.15; } }
+
+  /* ---------- hero ---------- */
+  .hero{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 90px 24px 70px;
+    text-align: center;
+  }
+
+  .hero-eyebrow{
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    margin-bottom: 22px;
+    text-shadow: 0 0 12px rgba(77,232,224,0.6);
+  }
+
+  .hero h1{
+    font-size: clamp(2.1rem, 7vw, 4.4rem);
+    line-height: 1.15;
+    letter-spacing: 1px;
+    text-shadow:
+      3px 3px 0 var(--magenta),
+      6px 6px 0 rgba(0,0,0,0.4);
+  }
+
+  .hero h1 .sp{ display: block; }
+
+  .hero p{
+    max-width: 480px;
+    margin: 30px auto 0;
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.9;
+  }
+
+  .press-start{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 44px;
+    padding: 16px 30px;
+    background: var(--yellow);
+    color: #0d0e14;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #b8941f;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .press-start:hover{
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 #b8941f;
+  }
+  .press-start:active{
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #b8941f;
+  }
+
+  /* ---------- section label ---------- */
+  .section-head{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 34px;
+  }
+  .section-head .num{
+    font-size: 11px;
+    color: var(--magenta);
+  }
+  .section-head h2{
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+  .section-head .rule{
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ---------- cabinet grid ---------- */
+  .arcade{
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+
+  .cabinets{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 22px;
+  }
+
+  .cabinet{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--text);
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .cabinet:hover{
+    border-color: var(--cyan);
+    transform: translateY(-4px);
+  }
+  .cabinet:hover .cabinet-screen::after{
+    opacity: 1;
+  }
+  .cabinet:hover .play-tag{
+    color: var(--bg);
+    background: var(--cyan);
+  }
+
+  .cabinet-screen{
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background:
+      linear-gradient(135deg, rgba(77,232,224,0.12), rgba(255,79,163,0.12)),
+      #0a0b10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--line);
+  }
+  .cabinet-screen::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(77,232,224,0.08) 0px,
+      transparent 2px,
+      transparent 4px
+    );
+    transition: opacity 0.2s ease;
+  }
+
+  .cabinet-glyph{
+    font-size: 42px;
+    filter: drop-shadow(0 0 14px rgba(77,232,224,0.5));
+  }
+
+  .cabinet-body{
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .cabinet-index{
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .cabinet-title{
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+  }
+
+  .cabinet-desc{
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    flex: 1;
+  }
+
+  .play-tag{
+    align-self: flex-start;
+    margin-top: 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    border: 1px solid currentColor;
+    padding: 7px 12px;
+    transition: all 0.15s ease;
+  }
+
+  /* placeholder (no link yet) card style */
+  .cabinet.is-empty{
+    cursor: default;
+    opacity: 0.55;
+  }
+  .cabinet.is-empty:hover{
+    transform: none;
+    border-color: var(--line);
+  }
+  .cabinet.is-empty .cabinet-glyph{ opacity: 0.4; filter: none; }
+  .cabinet.is-empty .play-tag{
+    color: var(--text-dim);
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    max-width: 1100px;
+    margin: 40px auto 0;
+    padding: 40px 24px 50px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer p{
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+  .footer-blink{
+    font-size: 10px;
+    color: var(--yellow);
+    animation: blink 1.6s steps(1) infinite;
+  }
+
+  @media (max-width: 520px){
+    header{ flex-direction: column; align-items: flex-start; gap: 10px; }
+    footer{ flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .coin-dot, .footer-blink{ animation: none; }
+  }
 </style>
 </head>
 <body>
 
-<div class="title-block">
-  <div class="eyebrow">実 験 的 調 理 記 録 局</div>
-  <h1>狂気の <span class="flame">創作料理</span> 生成器</h1>
-  <div class="subtitle">単語プールから無作為に抽出し、ありえない一皿を捏造します</div>
-</div>
+<div class="bg-grid"></div>
+<div class="glow-blob glow-1"></div>
+<div class="glow-blob glow-2"></div>
 
-<div class="stage">
-  <div class="card">
-    <div class="stamp" id="stamp">試作品</div>
-    <div class="label">本日の献立 № <span id="dish-no">001</span></div>
-    <div class="dish-name" id="dish-name">ボタンを押して生成 →</div>
-    <div class="tag-row" id="tag-row"></div>
-    <div class="verdict" id="verdict"></div>
-  </div>
+<main>
 
-  <div class="controls">
-    <button id="generate">一皿 生成する</button>
-    <button id="save" disabled>記録に残す</button>
-  </div>
-</div>
+  <header>
+    <div class="brand pixel">
+      <span class="brand-mark">★</span>
+      <span class="brand-name">GAME PORTAL</span>
+    </div>
+    <div class="coin pixel">
+      <span class="coin-dot"></span>
+      CREDIT 01
+    </div>
+  </header>
 
-<div class="archive-section">
-  <div class="archive-title">献立記録</div>
-  <div class="archive-list" id="archive-list"></div>
-</div>
+  <section class="hero">
+    <div class="hero-eyebrow pixel">SELECT YOUR GAME</div>
+    <h1 class="pixel">
+      <span class="sp">PRESS</span>
+      <span class="sp">START</span>
+    </h1>
+    <p>好きなゲームを選んでね。カードをタップすると、それぞれの作品ページへ移動します。</p>
+    <a href="#arcade" class="press-start pixel">▶ ゲームを見る</a>
+  </section>
 
-<footer>WORD POOL RECOMBINATION ENGINE — NO ACTUAL FOOD WAS HARMED</footer>
+  <section class="arcade" id="arcade">
+    <div class="section-head">
+      <span class="num pixel">01</span>
+      <h2 class="pixel">GAME SELECT</h2>
+      <span class="rule"></span>
+    </div>
 
-<script>
-// 単語プール
-const temperature = ["熱々の","冷たい","半熟の","氷結した","炙った","常温の","湯気立つ","冷凍の","とろけた"];
-const texture = ["とろとろの","パリパリの","もちもちの","ふわふわの","サクサクの","ねっとりした","ぷるぷるの","カリカリの"];
-const style = ["スペイン風","博多風","北欧風","昭和風","江戸前","仏蘭西式","四川式","おばあちゃん直伝の","宇宙食風","令和ネオ"];
-const method = ["蒸し","炙り","燻製","素揚げ","低温調理","炭火焼き","真空調理","土鍋炊き","三日間熟成"];
-const mainIngredient = ["鶏","鮭","豚バラ","茄子","牡蠣","豆腐","牛タン","ホタテ","椎茸","レバー","うなぎ","たこ"];
-const subForm = ["ちらし","巻き","丼","餃子","春巻き","おにぎり","グラタン","茶碗蒸し","素麺","もつ鍋","カレー"];
-const carrier = ["ポテト","パスタ","バゲット","おかゆ","うどん","タコス","餅","クレープ","ラザニア","ワッフル"];
-const unexpectedFlavor = ["とんかつ味噌","チョコレート","ゆず胡椒","キャラメル","明太子","抹茶","バニラ","塩レモン","黒蜜","ナンプラー","ピーナッツバター","わさび醤油"];
-const finisher = ["ソース","仕立て","風味","がけ","添え","マリネ","ジュレ","漬け","和え"];
+    <div class="cabinets">
 
-const tagPool = ["禁断の一皿","誰も頼んでいない","賛否両論","伝説の失敗作","厨房の悲鳴","三ツ星の可能性","胃が困惑","逆に美味い説","封印推奨"];
+      <!-- Card 1: ARCANUM ECHO -->
+      <a href="./games/arcanum-echo/" class="cabinet">
+        <div class="cabinet-screen"><span class="cabinet-glyph">✨</span></div>
+        <div class="cabinet-body">
+          <span class="cabinet-index pixel">NO. 01</span>
+          <div class="cabinet-title pixel">ARCANUM ECHO</div>
+          <p class="cabinet-desc">謎のダンジョンを冒険するRPG。古の力を集めて世界を救え。</p>
+          <span class="play-tag pixel">PLAY →</span>
+        </div>
+      </a>
 
-const verdicts = [
-  "審査員、無言でフォークを置く。",
-  "一口目は驚愕、二口目は謎の中毒性。",
-  "これを生み出した経緯を、誰も聞かない方がいい。",
-  "レシピ本には絶対載らない。",
-  "味の方向性が迷子になっている。天才の証拠。",
-  "食べた者は皆、遠い目をする。",
-  "SNS映えは満点、味は未知数。",
-  "厨房の伝説として語り継がれるだろう。",
-  "これは料理か、それとも実験か。",
-  "一部のマニアの間で密かに支持されている。"
-];
+      <!-- Card 2: Coming Soon -->
+      <div class="cabinet is-empty">
+        <div class="cabinet-screen"><span class="cabinet-glyph">🎮</span></div>
+        <div class="cabinet-body">
+          <span class="cabinet-index pixel">NO. 02</span>
+          <div class="cabinet-title pixel">COMING SOON</div>
+          <p class="cabinet-desc">新しいゲームを準備中です。</p>
+          <span class="play-tag pixel">WAIT...</span>
+        </div>
+      </div>
 
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+      <!-- Card 3: Coming Soon -->
+      <div class="cabinet is-empty">
+        <div class="cabinet-screen"><span class="cabinet-glyph">🎯</span></div>
+        <div class="cabinet-body">
+          <span class="cabinet-index pixel">NO. 03</span>
+          <div class="cabinet-title pixel">COMING SOON</div>
+          <p class="cabinet-desc">新しいゲームを準備中です。</p>
+          <span class="play-tag pixel">WAIT...</span>
+        </div>
+      </div>
 
-let dishCount = 0;
-let currentDish = null;
-let archive = [];
+      <!-- Card 4: Coming Soon -->
+      <div class="cabinet is-empty">
+        <div class="cabinet-screen"><span class="cabinet-glyph">➕</span></div>
+        <div class="cabinet-body">
+          <span class="cabinet-index pixel">NO. 04</span>
+          <div class="cabinet-title pixel">COMING SOON</div>
+          <p class="cabinet-desc">新しいゲームを準備中です。</p>
+          <span class="play-tag pixel">WAIT...</span>
+        </div>
+      </div>
 
-function generateDish(){
-  // ランダムに構成パターンを複数用意して、毎回違う組み立て方にする
-  const patterns = [
-    () => `${pick(temperature)}${pick(style)}${pick(mainIngredient)}の${pick(subForm)}${pick(carrier)}の${pick(texture)}${pick(mainIngredient)}${pick(unexpectedFlavor)}${pick(finisher)}`,
-    () => `${pick(style)}${pick(method)}${pick(mainIngredient)}と${pick(carrier)}の${pick(temperature)}${pick(unexpectedFlavor)}${pick(finisher)}`,
-    () => `${pick(temperature)}${pick(texture)}${pick(mainIngredient)}${pick(subForm)}の${pick(unexpectedFlavor)}${pick(finisher)}仕立て`,
-    () => `${pick(style)}${pick(carrier)}の${pick(method)}${pick(mainIngredient)}と${pick(unexpectedFlavor)}の${pick(texture)}${pick(finisher)}`
-  ];
-  return pick(patterns)();
-}
+    </div>
+  </section>
 
-function renderDishName(text){
-  const el = document.getElementById('dish-name');
-  el.innerHTML = '';
-  // 文字ごとにspanで包んでフェードイン(文字数が多いので少しずつ)
-  [...text].forEach((ch, i) => {
-    const span = document.createElement('span');
-    span.className = 'word';
-    span.textContent = ch;
-    span.style.animationDelay = (i*0.02)+'s';
-    el.appendChild(span);
-  });
-}
+  <footer>
+    <p class="pixel">© 2026 GAME PORTAL</p>
+    <span class="footer-blink pixel">INSERT COIN</span>
+  </footer>
 
-function renderTags(){
-  const row = document.getElementById('tag-row');
-  row.innerHTML = '';
-  const shuffled = [...tagPool].sort(()=>Math.random()-0.5).slice(0, 2 + Math.floor(Math.random()*2));
-  shuffled.forEach(t=>{
-    const span = document.createElement('span');
-    span.className = 'tag';
-    span.textContent = t;
-    row.appendChild(span);
-  });
-}
-
-function renderArchive(){
-  const list = document.getElementById('archive-list');
-  list.innerHTML = '';
-  if(archive.length === 0){
-    const p = document.createElement('div');
-    p.className = 'empty-note';
-    p.textContent = '記録された献立はまだありません。';
-    list.appendChild(p);
-    return;
-  }
-  archive.slice().reverse().forEach((item)=>{
-    const row = document.createElement('div');
-    row.className = 'archive-item';
-    const span = document.createElement('span');
-    span.textContent = `№${item.no}　${item.name}`;
-    row.appendChild(span);
-    row.appendChild(row);
-  });
-}
-
-document.getElementById('generate').addEventListener('click', ()=>{
-  dishCount++;
-  document.getElementById('dish-no').textContent = String(dishCount).padStart(3,'0');
-  const name = generateDish();
-  currentDish = { no: dishCount, name };
-  renderDishName(name);
-  renderTags();
-  document.getElementById('verdict').textContent = pick(verdicts);
-  document.getElementById('stamp').textContent = pick(["試作品","要注意","限定一皿","超危険物","極秘レシピ"]);
-  document.getElementById('save').disabled = false;
-});
-
-document.getElementById('save').addEventListener('click', ()=>{
-  if(!currentDish) return;
-  archive.push(currentDish);
-  renderArchive();
-  document.getElementById('save').disabled = true;
-});
-
-renderArchive();
-</script>
+</main>
 
 </body>
 </html>
