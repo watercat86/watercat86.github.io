@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCANUM ECHO — 深淵の刻</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700;900&family=EB+Garamond:ital@1&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   ARCANUM ECHO — デザイントークン
+   Base   : #0a0612 (漆黒の紫)  #120a1e (パネル濃)  #1c1330 (パネル淡)
+   Accent : #9b5de5 (アルカナ紫) #e8b64a (古金) #5ecbe0 (魔力青)
+   Danger : #e0475a  Text: #ece6f7 / #a99bc4(muted)
+   Type   : 見出し=Cinzel(欧字)+Noto Serif JP(和字) / 本文=Noto Sans JP
+   ========================================================= */
+:root{
+  --bg-void:#08050e;
+  --bg-deep:#0d0817;
+  --panel:#140d22;
+  --panel-2:#1b1230;
+  --panel-edge:#2c1f47;
+  --line:#3a2a5c;
+  --arcane:#9b5de5;
+  --arcane-soft:#c9a3f5;
+  --gold:#e8b64a;
+  --gold-soft:#f5d999;
+  --mp:#5ecbe0;
+  --danger:#e0475a;
+  --danger-soft:#ff8a9a;
+  --ok:#5fd88a;
+  --text:#ece6f7;
+  --muted:#8f80ad;
+  --faint:#5a4d78;
+  --shadow-deep: 0 20px 60px rgba(0,0,0,.65);
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(155,93,229,.14), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 10%, rgba(94,203,224,.08), transparent 55%),
+    var(--bg-void);
+  color:var(--text);
+  font-family:"Noto Sans JP", sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-track{ background:var(--bg-deep); }
+::-webkit-scrollbar-thumb{ background:var(--panel-edge); border-radius:4px; }
+::-webkit-scrollbar-thumb:hover{ background:var(--arcane); }
+
+/* 背景装飾：紋章の薄い輪郭を漂わせる */
+.bg-sigil{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  opacity:.05;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 60px, rgba(155,93,229,.5) 60px 61px),
+    repeating-linear-gradient(-45deg, transparent 0 60px, rgba(94,203,224,.3) 60px 61px);
+}
+
+/* ===== ヘッダー ===== */
+.app-header{
+  position:relative; z-index:5;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px;
+  padding:14px 24px;
+  background:linear-gradient(180deg, rgba(20,13,34,.95), rgba(13,8,23,.85));
+  border-bottom:1px solid var(--panel-edge);
+  backdrop-filter: blur(6px);
+}
+.brand{
+  display:flex; align-items:baseline; gap:10px;
+}
+.brand-mark{
+  font-family:"Cinzel", serif;
+  font-weight:800;
+  font-size:22px;
+  letter-spacing:.04em;
+  background:linear-gradient(135deg, var(--gold-soft), var(--gold) 45%, var(--arcane-soft));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.brand-sub{
+  font-family:"Noto Serif JP", serif;
+  font-size:12px;
+  color:var(--muted);
+  letter-spacing:.15em;
+}
+.top-vitals{
+  display:flex; gap:22px; align-items:center;
+  font-family:"Cinzel", serif;
+}
+.top-vital{ text-align:right; }
+.top-vital .num{ font-size:19px; font-weight:700; color:var(--gold-soft); }
+.top-vital .lbl{ font-size:10px; color:var(--muted); letter-spacing:.12em; font-family:"Noto Sans JP",sans-serif; }
+#topLevel .num{ color:var(--arcane-soft); }
+
+/* ===== レイアウト：戦闘固定 + サイドパネル ===== */
+.stage{
+  position:relative; z-index:2;
+  display:grid;
+  grid-template-columns: minmax(0,1fr) 420px;
+  gap:18px;
+  padding:18px 24px 28px;
+  max-width:1440px;
+  margin:0 auto;
+  align-items:start;
+}
+@media (max-width: 980px){
+  .stage{ grid-template-columns: 1fr; }
+}
+
+/* ===== 戦闘フィールド（常時表示） ===== */
+.battlefield{
+  position:relative;
+  background:
+    radial-gradient(ellipse 500px 260px at 50% 100%, rgba(155,93,229,.12), transparent 70%),
+    linear-gradient(180deg, var(--bg-deep), #0a0614 70%);
+  border:1px solid var(--panel-edge);
+  border-radius:18px;
+  padding:22px;
+  box-shadow: var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,.03);
+  min-height:560px;
+  display:flex; flex-direction:column; gap:14px;
+}
+
+.combatant-row{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:16px;
+}
+@media (max-width:640px){ .combatant-row{ grid-template-columns:1fr; } }
+
+.combatant{
+  position:relative;
+  background:linear-gradient(160deg, var(--panel), var(--panel-2));
+  border:1px solid var(--panel-edge);
+  border-radius:14px;
+  padding:16px 16px 14px;
+  overflow:visible;
+}
+.combatant.is-enemy{ border-color:#4a2a4e; }
+
+.combatant-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:8px;
+}
+.combatant-name{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-weight:700;
+  font-size:15px;
+  color:var(--arcane-soft);
+  letter-spacing:.03em;
+}
+.is-enemy .combatant-name{ color:var(--danger-soft); }
+.combatant-tag{
+  font-size:10px; color:var(--muted);
+  border:1px solid var(--panel-edge);
+  padding:2px 8px; border-radius:20px;
+  letter-spacing:.08em;
+}
+
+.sigil-ring{
+  width:78px; height:78px; border-radius:50%;
+  margin:2px auto 12px;
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(155,93,229,.35), transparent 70%);
+  border:2px solid var(--arcane);
+  box-shadow: 0 0 22px rgba(155,93,229,.35), inset 0 0 18px rgba(155,93,229,.2);
+}
+.is-enemy .sigil-ring{
+  border-color:var(--danger);
+  box-shadow: 0 0 22px rgba(224,71,90,.35), inset 0 0 18px rgba(224,71,90,.2);
+}
+.sigil-ring svg{ width:40px; height:40px; }
+
+.gauge-row{ margin:8px 0; }
+.gauge-label{
+  display:flex; justify-content:space-between;
+  font-size:11px; color:var(--muted); margin-bottom:3px;
+  font-variant-numeric: tabular-nums;
+}
+.gauge-label b{ color:var(--text); font-weight:500; }
+.gauge{
+  height:11px; border-radius:6px; overflow:hidden;
+  background:#150c22;
+  border:1px solid rgba(255,255,255,.05);
+  position:relative;
+}
+.gauge-fill{
+  height:100%; width:0%;
+  border-radius:6px;
+  transition: width .35s cubic-bezier(.2,.8,.3,1);
+  position:relative;
+}
+.gauge-fill::after{
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.35), transparent 60%);
+}
+.gauge-hp .gauge-fill{ background:linear-gradient(90deg,#3fae63,#5fd88a); }
+.gauge-hp.low .gauge-fill{ background:linear-gradient(90deg,#a83244,var(--danger)); }
+.gauge-mp .gauge-fill{ background:linear-gradient(90deg,#3287a8,var(--mp)); }
+.gauge-xp .gauge-fill{ background:linear-gradient(90deg,#6a3fae,var(--arcane)); }
+.gauge-enemy .gauge-fill{ background:linear-gradient(90deg,#a83244,#ff6b7d); }
+
+.stat-mini-row{
+  display:flex; flex-wrap:wrap; gap:6px 14px;
+  font-size:12px; color:var(--muted); margin-top:8px;
+}
+.stat-mini-row span b{ color:var(--gold-soft); font-weight:600; }
+
+/* ===== コマンドデッキ ===== */
+.command-deck{
+  border-top:1px dashed var(--panel-edge);
+  padding-top:14px;
+}
+.deck-heading{
+  font-size:11px; letter-spacing:.14em; color:var(--faint);
+  margin-bottom:8px; display:flex; align-items:center; gap:8px;
+}
+.deck-heading::after{ content:""; flex:1; height:1px; background:var(--panel-edge); }
+
+.deck-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+  gap:8px;
+}
+.cmd-btn{
+  position:relative;
+  background:linear-gradient(165deg, #241735, #170f26);
+  border:1px solid var(--panel-edge);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:10px;
+  font-family:"Noto Sans JP",sans-serif;
+  font-size:13px;
+  font-weight:500;
+  cursor:pointer;
+  text-align:left;
+  transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  overflow:hidden;
+}
+.cmd-btn .cmd-cost{
+  display:block; font-size:10px; color:var(--muted); margin-top:2px;
+}
+.cmd-btn:hover:not(:disabled){
+  transform:translateY(-2px);
+  border-color:var(--arcane);
+  box-shadow:0 6px 18px rgba(155,93,229,.25);
+}
+.cmd-btn:active:not(:disabled){ transform:translateY(0); }
+.cmd-btn:disabled{
+  opacity:.35; cursor:default; filter:grayscale(.4);
+}
+.cmd-btn.primary{
+  background:linear-gradient(165deg, #3a2560, #241242);
+  border-color:var(--arcane);
+}
+.cmd-btn.gold{ border-color:var(--gold); }
+.cmd-btn.gold:hover:not(:disabled){ box-shadow:0 6px 18px rgba(232,182,74,.25); }
+.cmd-btn.danger{ border-color:var(--danger); }
+.cmd-btn.danger:hover:not(:disabled){ box-shadow:0 6px 18px rgba(224,71,90,.25); }
+
+/* ===== サイドパネル ===== */
+.side{
+  display:flex; flex-direction:column; gap:12px;
+  position:sticky; top:14px;
+}
+.side-tabs{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:6px;
+  background:var(--panel);
+  border:1px solid var(--panel-edge);
+  border-radius:14px;
+  padding:6px;
+}
+.side-tabs .tab-btn{
+  background:transparent;
+  border:none;
+  color:var(--muted);
+  padding:9px 6px;
+  border-radius:9px;
+  font-size:12px;
+  font-family:"Noto Sans JP",sans-serif;
+  cursor:pointer;
+  transition:.15s;
+}
+.side-tabs .tab-btn:hover{ color:var(--text); background:rgba(255,255,255,.03); }
+.side-tabs .tab-btn.active{
+  background:linear-gradient(160deg, var(--arcane), #6f38c2);
+  color:#fff;
+  box-shadow:0 4px 14px rgba(155,93,229,.4);
+}
+
+.side-panel{
+  background:linear-gradient(170deg, var(--panel), var(--bg-deep));
+  border:1px solid var(--panel-edge);
+  border-radius:16px;
+  padding:18px;
+  min-height:420px;
+  box-shadow: var(--shadow-deep);
+}
+.panel-title{
+  font-family:"Cinzel","Noto Serif JP",serif;
+  font-size:16px;
+  font-weight:700;
+  color:var(--gold-soft);
+  margin:0 0 12px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--panel-edge);
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title .ico{ width:16px; height:16px; opacity:.8; }
+
+.info-line{ font-size:13px; color:var(--muted); margin:5px 0; line-height:1.6; }
+.info-line b{ color:var(--text); font-weight:600; }
+
+/* 強化リスト */
+.upg-list{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.upg-row{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--panel-2); border:1px solid var(--panel-edge);
+  border-radius:10px; padding:10px 12px;
+}
+.upg-row .upg-name{ font-size:13px; font-weight:600; }
+.upg-row .upg-cost{ font-size:11px; color:var(--muted); }
+.upg-row button{
+  background:linear-gradient(160deg, var(--gold-soft), var(--gold));
+  color:#2a1c05; border:none; font-weight:700;
+  padding:7px 14px; border-radius:8px; cursor:pointer; font-size:12px;
+  white-space:nowrap;
+}
+.upg-row button:hover{ filter:brightness(1.08); }
+.upg-row button:disabled{ background:#3a3345; color:#786f8a; cursor:default; }
+
+/* 武器ショップ */
+.weapon-card{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--panel-2); border:1px solid var(--panel-edge);
+  border-radius:10px; padding:10px 12px; margin-bottom:8px;
+  gap:10px;
+}
+.weapon-card .w-info{ font-size:12.5px; }
+.weapon-card .w-name{ font-weight:700; color:var(--text); }
+.weapon-card .w-meta{ color:var(--muted); font-size:11px; margin-top:2px; }
+.weapon-card .w-type{
+  display:inline-block; font-size:10px; padding:1px 7px; border-radius:20px;
+  border:1px solid var(--panel-edge); color:var(--muted); margin-right:6px;
+}
+.weapon-card button{
+  background:linear-gradient(160deg, var(--arcane-soft), var(--arcane));
+  color:#fff; border:none; font-weight:700;
+  padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px;
+  white-space:nowrap;
+}
+.weapon-card button:disabled{ background:#3a3345; color:#786f8a; cursor:default; }
+
+/* スキルツリー */
+.skill-branch-title{
+  font-family:"Noto Serif JP", serif;
+  font-size:13px; color:var(--arcane-soft); font-weight:700;
+  margin:16px 0 8px; letter-spacing:.04em;
+}
+.skill-branch-title:first-of-type{ margin-top:4px; }
+.skill-node{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--panel-2); border:1px solid var(--panel-edge);
+  border-radius:10px; padding:9px 12px; margin-bottom:6px;
+}
+.skill-node.learned{ border-color:var(--ok); background:rgba(95,216,138,.06); }
+.skill-node .s-name{ font-size:12.5px; font-weight:600; }
+.skill-node .s-cost{ font-size:10.5px; color:var(--muted); }
+.skill-node button{
+  background:linear-gradient(160deg, var(--arcane-soft), var(--arcane));
+  color:#fff; border:none; font-weight:700;
+  padding:6px 12px; border-radius:7px; cursor:pointer; font-size:11px;
+}
+.skill-node button:disabled{ background:#3a3345; color:#786f8a; cursor:default; }
+.skill-node.learned button{ background:#2a4a34; color:#8fdca8; }
+
+/* ログ */
+.log-tabs{ display:flex; gap:6px; margin-bottom:8px; }
+.log-tab-btn{
+  flex:1; background:var(--panel-2); border:1px solid var(--panel-edge);
+  color:var(--muted); padding:7px; border-radius:8px; font-size:12px; cursor:pointer;
+}
+.log-tab-btn.active{ background:var(--arcane); color:#fff; border-color:var(--arcane); }
+.log-view{
+  background:#070410;
+  border:1px solid var(--panel-edge);
+  border-radius:10px;
+  padding:10px 12px;
+  height:360px;
+  overflow-y:auto;
+  font-size:12.5px;
+  line-height:1.7;
+  display:none;
+}
+.log-view.active{ display:block; }
+.log-line{ margin-bottom:3px; border-bottom:1px dotted rgba(255,255,255,.04); padding-bottom:3px; }
+.battle-log{ color:#ff9db0; }
+.idle-log{ color:#7fd7ec; }
+.log-line .big{ color:var(--gold-soft); font-weight:700; }
+.clear-log-btn{
+  background:var(--panel-2); border:1px solid var(--panel-edge); color:var(--muted);
+  padding:6px 12px; border-radius:8px; font-size:11.5px; cursor:pointer; margin-bottom:10px;
+}
+
+/* 放置レーン */
+.conveyor-visual{
+  display:flex; align-items:center; justify-content:center;
+  height:70px; border-radius:12px; margin-bottom:12px;
+  background:repeating-linear-gradient(90deg, rgba(155,93,229,.08) 0 20px, rgba(155,93,229,.02) 20px 40px);
+  border:1px solid var(--panel-edge);
+  font-family:"Cinzel",serif; font-size:12px; color:var(--muted); letter-spacing:.1em;
+}
+.conveyor-visual.active{ color:var(--gold-soft); }
+
+/* セーブ */
+textarea, input.spell-input{
+  width:100%; background:#070410; border:1px solid var(--panel-edge);
+  color:var(--text); padding:10px; border-radius:8px; font-size:12px;
+  font-family: monospace; resize:vertical;
+}
+.save-output{
+  background:#070410; border:1px solid var(--panel-edge); border-radius:8px;
+  padding:10px; font-size:11px; word-break:break-all; color:var(--muted);
+  min-height:40px; margin:8px 0 14px;
+}
+.action-btn{
+  background:linear-gradient(160deg, var(--arcane-soft), var(--arcane));
+  color:#fff; border:none; font-weight:700;
+  padding:9px 16px; border-radius:9px; cursor:pointer; font-size:13px;
+  margin-top:6px;
+}
+
+/* ===== 演出 ===== */
+.fx-panel{ position:relative; overflow:visible; }
+
+@keyframes fxGlowEnemy{
+  0%{ box-shadow:0 0 0 0 rgba(224,71,90,0); }
+  22%{ box-shadow:0 0 26px 4px rgba(224,71,90,.75); }
+  100%{ box-shadow:0 0 0 0 rgba(224,71,90,0); }
+}
+@keyframes fxGlowCrit{
+  0%{ box-shadow:0 0 0 0 rgba(232,182,74,0); }
+  22%{ box-shadow:0 0 30px 6px rgba(232,182,74,.9); }
+  100%{ box-shadow:0 0 0 0 rgba(232,182,74,0); }
+}
+.fx-glow-enemy{ animation: fxGlowEnemy .65s ease-out; }
+.fx-glow-crit{ animation: fxGlowCrit .65s ease-out; }
+
+.fx-popup{
+  position:absolute; top:6px; left:50%; transform:translate(-50%,0);
+  font-family:"Cinzel", serif;
+  font-weight:700; font-size:16px; white-space:nowrap; pointer-events:none;
+  animation: fxPopupFloat 1.15s cubic-bezier(.2,.8,.3,1) forwards;
+  z-index:30; text-shadow:0 0 10px rgba(0,0,0,.85);
+}
+.fx-popup.fx-enemy{ color:var(--danger-soft); }
+.fx-popup.fx-crit{ color:var(--gold-soft); }
+@keyframes fxPopupFloat{
+  0%{ opacity:0; transform:translate(-50%,8px) scale(.85); }
+  15%{ opacity:1; transform:translate(-50%,-4px) scale(1.05); }
+  80%{ opacity:1; transform:translate(-50%,-26px) scale(1); }
+  100%{ opacity:0; transform:translate(-50%,-38px) scale(1); }
+}
+
+/* ダメージ数値ポップ（新規） */
+.fx-dmg{
+  position:absolute; top:30%; left:50%; transform:translate(-50%,-50%);
+  font-family:"Cinzel",serif; font-weight:800; pointer-events:none;
+  z-index:31; white-space:nowrap;
+  animation: fxDmgPop .85s cubic-bezier(.15,.9,.3,1) forwards;
+}
+.fx-dmg.normal{ font-size:22px; color:#fff; text-shadow:0 0 8px rgba(155,93,229,.8), 0 2px 4px rgba(0,0,0,.8); }
+.fx-dmg.crit{ font-size:30px; color:var(--gold-soft); text-shadow:0 0 14px rgba(232,182,74,.9), 0 2px 4px rgba(0,0,0,.8); }
+@keyframes fxDmgPop{
+  0%{ opacity:0; transform:translate(-50%,-40%) scale(.5) rotate(-6deg); }
+  20%{ opacity:1; transform:translate(-50%,-55%) scale(1.15) rotate(2deg); }
+  100%{ opacity:0; transform:translate(-50%,-90%) scale(1) rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .fx-glow-enemy,.fx-glow-crit{ animation:none; }
+  .fx-popup{ animation: fxPopupFadeOnly 1.1s ease-out forwards; }
+  .fx-dmg{ animation: fxPopupFadeOnly .85s ease-out forwards; }
+}
+@keyframes fxPopupFadeOnly{ 0%{opacity:0;} 15%{opacity:1;} 80%{opacity:1;} 100%{opacity:0;} }
+
+/* 技エフェクト（SVG差し替え・強化） */
+.fx-anim{
+  position:absolute; inset:0; pointer-events:none; z-index:16;
+  display:flex; align-items:center; justify-content:center;
+}
+.fx-anim svg{ overflow:visible; filter:drop-shadow(0 0 10px rgba(155,93,229,.55)); }
+
+.fx-punch-burst{ width:80px;height:80px; animation:fxPunch .42s ease-out forwards; }
+@keyframes fxPunch{ 0%{transform:scale(.3);opacity:0;} 30%{transform:scale(1.15);opacity:1;} 100%{transform:scale(1.7);opacity:0;} }
+
+.fx-slash-single{ width:170px;height:170px; animation:fxSlashSingle .4s ease-out forwards; }
+@keyframes fxSlashSingle{ 0%{transform:scale(.6) rotate(-20deg);opacity:0;} 25%{opacity:1;} 100%{transform:scale(1.35) rotate(-20deg) translateX(22px);opacity:0;} }
+
+.fx-slash-cross{ width:190px;height:190px; animation:fxSlashCross .5s ease-out forwards; }
+@keyframes fxSlashCross{ 0%{transform:scale(.5) rotate(0deg);opacity:0;} 20%{opacity:1;} 100%{transform:scale(1.45) rotate(8deg);opacity:0;} }
+
+.fx-slash-multi{ width:180px;height:180px; animation:fxQuickFlash .34s ease-out forwards; }
+@keyframes fxQuickFlash{ 0%{transform:scale(.5);opacity:0;} 20%{opacity:1;transform:scale(1.1);} 100%{transform:scale(1.55);opacity:0;} }
+
+.fx-explosion{ width:230px;height:230px; animation:fxExplosion .7s ease-out forwards; }
+@keyframes fxExplosion{ 0%{transform:scale(.15);opacity:0;} 28%{opacity:1;} 100%{transform:scale(1.9);opacity:0;} }
+
+.fx-fire-swirl{ width:170px;height:170px; animation:fxFireSwirl .62s ease-out forwards; }
+@keyframes fxFireSwirl{ 0%{transform:scale(.4) rotate(0deg);opacity:0;} 30%{opacity:1;} 100%{transform:scale(1.35) rotate(200deg);opacity:0;} }
+
+.fx-spin-blades{ width:180px;height:180px; animation:fxSpinBlades .78s linear forwards; }
+@keyframes fxSpinBlades{ 0%{transform:scale(.6) rotate(0deg);opacity:0;} 15%{opacity:1;} 100%{transform:scale(1.25) rotate(360deg);opacity:0;} }
+
+.fx-slash-giant{ width:260px;height:260px; animation:fxSlashGiant .58s ease-out forwards; }
+@keyframes fxSlashGiant{ 0%{transform:scale(.3) rotate(-15deg);opacity:0;} 25%{opacity:1;} 100%{transform:scale(1.65) rotate(-15deg) translateX(30px);opacity:0;} }
+
+.fx-lightning{ width:120px;height:220px; animation:fxLightning .42s ease-out forwards; }
+@keyframes fxLightning{ 0%,100%{opacity:0;} 10%,30%,50%{opacity:1;} 20%,40%{opacity:.25;} }
+
+.fx-comet{ width:250px;height:250px; animation:fxComet .58s ease-in forwards; }
+@keyframes fxComet{ 0%{transform:translate(80px,-80px) scale(.5);opacity:0;} 60%{opacity:1;} 100%{transform:translate(0,0) scale(1.35);opacity:0;} }
+
+@media (prefers-reduced-motion: reduce){ .fx-anim{ animation:none !important; } }
+
+/* 画面シェイク（被弾演出・新規） */
+@keyframes fxShake{
+  0%,100%{ transform:translateX(0); }
+  20%{ transform:translateX(-6px); }
+  40%{ transform:translateX(5px); }
+  60%{ transform:translateX(-4px); }
+  80%{ transform:translateX(3px); }
+}
+.fx-shake{ animation: fxShake .32s ease-in-out; }
+@media (prefers-reduced-motion: reduce){ .fx-shake{ animation:none; } }
+
+/* 撃破フラッシュ（新規） */
+@keyframes fxKillFlash{
+  0%{ background:rgba(255,255,255,0); }
+  15%{ background:rgba(255,255,255,.55); }
+  100%{ background:rgba(255,255,255,0); }
+}
+.fx-kill-flash{
+  position:absolute; inset:0; z-index:40; pointer-events:none; border-radius:14px;
+  animation: fxKillFlash .4s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce){ .fx-kill-flash{ display:none; } }
+
+/* 敵登場フェード（新規） */
+@keyframes fxEnemyIn{
+  0%{ opacity:0; transform:translateY(6px) scale(.97); }
+  100%{ opacity:1; transform:translateY(0) scale(1); }
+}
+.fx-enemy-in{ animation: fxEnemyIn .4s ease-out; }
+
+.hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="bg-sigil"></div>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-mark">ARCANUM ECHO</span>
+    <span class="brand-sub">— 深淵の刻 —</span>
+  </div>
+  <div class="top-vitals">
+    <div class="top-vital" id="topLevel"><div class="num">Lv.1</div><div class="lbl">LEVEL</div></div>
+    <div class="top-vital" id="topGold"><div class="num">0</div><div class="lbl">GOLD</div></div>
+  </div>
+</header>
+
+<div class="stage">
+
+  <!-- ============ 常時表示：戦闘フィールド ============ -->
+  <div class="battlefield">
+
+    <div class="combatant-row">
+
+      <!-- プレイヤー -->
+      <div class="combatant fx-panel" id="playerPanel">
+        <div class="combatant-head">
+          <span class="combatant-name">冒険者</span>
+          <span class="combatant-tag" id="playerWeapon">武器: なし</span>
+        </div>
+        <div class="sigil-ring">
+          <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#c9a3f5" stroke-width="2"/><path d="M20 6 L23 17 L34 17 L25 24 L28 35 L20 28 L12 35 L15 24 L6 17 L17 17 Z" fill="#c9a3f5" opacity=".85"/></svg>
+        </div>
+
+        <div class="gauge-row">
+          <div class="gauge-label"><span>HP</span><b id="playerHP">0 / 0</b></div>
+          <div class="gauge gauge-hp"><div class="gauge-fill" id="hpBar"></div></div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-label"><span>MP</span><b id="playerMP">0 / 0</b></div>
+          <div class="gauge gauge-mp"><div class="gauge-fill" id="mpBar"></div></div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-label"><span>XP</span><b id="playerXP">0 / 0</b></div>
+          <div class="gauge gauge-xp"><div class="gauge-fill" id="xpBar"></div></div>
+        </div>
+
+        <div class="stat-mini-row">
+          <span id="playerLevel">Lv.1</span>
+          <span id="playerATK">攻撃力: 0</span>
+          <span id="playerGold">Gold: 0</span>
+          <span id="rebirthInfo">転生Pt: 0 / SP: 0</span>
+        </div>
+      </div>
+
+      <!-- 敵 -->
+      <div class="combatant is-enemy fx-panel" id="enemyPanel">
+        <div class="combatant-head">
+          <span class="combatant-name" id="enemyName">名前: ---</span>
+          <span class="combatant-tag" id="enemyReward">報酬: -</span>
+        </div>
+        <div class="sigil-ring">
+          <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#ff8a9a" stroke-width="2"/><path d="M12 12 L28 28 M28 12 L12 28" stroke="#ff8a9a" stroke-width="3" stroke-linecap="round"/></svg>
+        </div>
+
+        <div class="gauge-row">
+          <div class="gauge-label"><span>HP</span><b id="enemyHP">0 / 0</b></div>
+          <div class="gauge gauge-enemy"><div class="gauge-fill" id="enemyHpBar"></div></div>
+        </div>
+
+        <div class="stat-mini-row">
+          <span id="enemyATK">攻撃力: 0</span>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:8px;">
+          <button class="cmd-btn gold" id="btnNextEnemy" disabled style="flex:1;">次の敵へ進む</button>
+          <button class="cmd-btn danger" id="btnRebirth" disabled style="flex:1;">転生（Lv100〜）</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- コマンドデッキ：戦闘操作 -->
+    <div class="command-deck">
+      <div class="deck-heading">基本行動</div>
+      <div class="deck-grid">
+        <button class="cmd-btn primary" id="btnAttack">斬撃<span class="cmd-cost">通常攻撃</span></button>
+        <button class="cmd-btn" id="btnHeal">秘薬の詠唱<span class="cmd-cost">HP全回復 / MP20%</span></button>
+        <button class="cmd-btn danger" id="btnEscape">離脱<span class="cmd-cost">戦闘を放棄</span></button>
+      </div>
+
+      <div class="deck-heading" style="margin-top:14px;">熟練の技</div>
+      <div class="deck-grid">
+        <button class="cmd-btn" id="btnSkill1">ソニックレイヴァー<span class="cmd-cost">Lv10 / MP8%</span></button>
+        <button class="cmd-btn" id="btnSkill2">ラストアルカナム<span class="cmd-cost">Lv35 / MP全消費</span></button>
+        <button class="cmd-btn" id="btnSkill3">ストライクレイド<span class="cmd-cost">Lv40 / MP30%</span></button>
+      </div>
+
+      <div class="deck-heading" style="margin-top:14px;">奥義（要習得）</div>
+      <div class="deck-grid">
+        <button class="cmd-btn" id="btnFireSword" disabled>ファイアソード<span class="cmd-cost">片手剣 / MP35</span></button>
+        <button class="cmd-btn" id="btnFullPowerSlash" disabled>全身全霊斬り<span class="cmd-cost">両手剣 / MP60</span></button>
+        <button class="cmd-btn" id="btnSpark" disabled>スパーク<span class="cmd-cost">MP30%</span></button>
+        <button class="cmd-btn" id="btnBladeDance">剣の舞<span class="cmd-cost">片手剣 / MP50</span></button>
+        <button class="cmd-btn" id="btnDisaster">ディザスター<span class="cmd-cost">両手剣 / MP85</span></button>
+        <button class="cmd-btn" id="btnCometShoot">コメットシュート<span class="cmd-cost">MP40%</span></button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ サイドパネル ============ -->
+  <div class="side">
+    <div class="side-tabs">
+      <button class="tab-btn active" data-tab="tab-upgrade">強化</button>
+      <button class="tab-btn" data-tab="tab-shop">武器</button>
+      <button class="tab-btn" data-tab="tab-skill">スキル</button>
+      <button class="tab-btn" data-tab="tab-conveyor">放置</button>
+      <button class="tab-btn" data-tab="tab-log">記録</button>
+      <button class="tab-btn" data-tab="tab-save">封印</button>
+    </div>
+
+    <!-- 強化 -->
+    <div id="tab-upgrade" class="side-panel tab-page">
+      <h2 class="panel-title">力の鍛錬</h2>
+      <div id="upgradeInfo"></div>
+      <div class="upg-list">
+        <div class="upg-row"><span class="upg-name">攻撃力</span><button id="btnUpgradeATK">強化する</button></div>
+        <div class="upg-row"><span class="upg-name">最大HP</span><button id="btnUpgradeHP">強化する</button></div>
+        <div class="upg-row"><span class="upg-name">最大MP</span><button id="btnUpgradeMP">強化する</button></div>
+        <div class="upg-row"><span class="upg-name">XP倍率</span><button id="btnUpgradeXP">強化する</button></div>
+      </div>
+    </div>
+
+    <!-- 武器ショップ -->
+    <div id="tab-shop" class="side-panel tab-page" style="display:none;">
+      <h2 class="panel-title">武具の蔵</h2>
+      <div class="info-line" id="weaponShopInfo"></div>
+      <div id="weaponList"></div>
+    </div>
+
+    <!-- スキルツリー -->
+    <div id="tab-skill" class="side-panel tab-page" style="display:none;">
+      <h2 class="panel-title">奥義継承の書</h2>
+      <div class="info-line" id="skillPointInfo"></div>
+
+      <div class="skill-branch-title">片手剣の系譜</div>
+      <div id="skillListOneHand"></div>
+
+      <div class="skill-branch-title">両手剣の系譜</div>
+      <div id="skillListTwoHand"></div>
+
+      <div class="skill-branch-title">共鳴の系譜</div>
+      <div id="skillListCommon"></div>
+    </div>
+
+    <!-- 放置レーン -->
+    <div id="tab-conveyor" class="side-panel tab-page" style="display:none;">
+      <h2 class="panel-title">無人の採掘坑</h2>
+      <div class="conveyor-visual" id="conveyorVisual">未稼働</div>
+      <div class="info-line" id="conveyorStatus"></div>
+      <div class="info-line" id="conveyorInfo"></div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <button class="cmd-btn gold" id="btnUnlockConveyor">100Gで解放する</button>
+        <button class="cmd-btn" id="btnConveyorGoldUp" disabled>収益アップ</button>
+        <button class="cmd-btn" id="btnConveyorSpeedUp" disabled>速度アップ</button>
+      </div>
+    </div>
+
+    <!-- ログ -->
+    <div id="tab-log" class="side-panel tab-page" style="display:none;">
+      <h2 class="panel-title">記録の間</h2>
+      <button class="clear-log-btn" id="btnClearLogs">記録を消去</button>
+      <div class="log-tabs">
+        <button class="log-tab-btn active" data-log="battleLog">戦闘記録</button>
+        <button class="log-tab-btn" data-log="idleLog">放置記録</button>
+      </div>
+      <div class="log-view active" id="battleLog"></div>
+      <div class="log-view" id="idleLog"></div>
+    </div>
+
+    <!-- セーブ -->
+    <div id="tab-save" class="side-panel tab-page" style="display:none;">
+      <h2 class="panel-title">封印の間</h2>
+      <div class="info-line">現在の魂の軌跡を、ふっかつのじゅもんとして封じます。</div>
+      <button class="action-btn" id="btnMakeSpell">じゅもんを発行する</button>
+      <div class="save-output" id="saveSpell">まだ発行されていません</div>
+
+      <div class="info-line" style="margin-top:12px;">じゅもんを唱え、軌跡を呼び戻す。</div>
+      <textarea id="inputSpell" rows="3" placeholder="ここにじゅもんを貼り付け"></textarea>
+      <button class="action-btn" id="btnLoadSpell">じゅもんをとなえる</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+window.onerror = function(message, source, lineno, colno, error){
+  const s =
+    `ERROR: ${message}\n${source}:${lineno}:${colno}\n\n` +
+    `これはエラーメッセージです。\n` +
+    `もしこの画面が表示された場合、この全文をコピーして作者に送信してください。`;
+
+  const box = document.createElement("div");
+  box.style.position = "fixed";
+  box.style.top = "50%";
+  box.style.left = "50%";
+  box.style.transform = "translate(-50%, -50%)";
+  box.style.padding = "16px 20px";
+  box.style.background = "rgba(120,10,30,0.97)";
+  box.style.color = "white";
+  box.style.zIndex = "99999";
+  box.style.fontSize = "14px";
+  box.style.borderRadius = "10px";
+  box.style.whiteSpace = "pre-wrap";
+  box.style.maxWidth = "80vw";
+  box.style.fontFamily = "monospace";
+  box.style.border = "1px solid #ff8a9a";
+  box.textContent = s;
+  document.body.appendChild(box);
+
+  alert(s);
+  return false;
+};
+
+// ===== 安全バインド =====
+function safeBind(id, handler){
+  const el = document.getElementById(id);
+  if(!el){
+    log(`<span style="color:#ff8a9a">MISSING ELEMENT: ${id}</span>`);
+    return false;
+  }
+  el.onclick = handler;
+  return true;
+}
+
+// ===== 初期化（DOMContentLoaded 内に統一） =====
+window.addEventListener("DOMContentLoaded", ()=>{
+
+  // --- 戦闘/操作イベント登録 ---
+  safeBind("btnAttack", playerAttack);
+  safeBind("btnHeal", heal);
+
+  safeBind("btnSkill1", skillSonic);
+  safeBind("btnSkill2", skillArcana);
+  safeBind("btnSkill3", skillRaid);
+
+  safeBind("btnFireSword", skillFireSword);
+  safeBind("btnFullPowerSlash", skillFullPowerSlash);
+  safeBind("btnSpark", skillSpark);
+
+  safeBind("btnBladeDance", skillBladeDance);
+  safeBind("btnDisaster", skillDisaster);
+  safeBind("btnCometShoot", skillCometShoot);
+
+  safeBind("btnEscape", escape);
+  safeBind("btnRebirth", rebirth);
+
+  safeBind("btnUpgradeATK", ()=>upgrade("atk"));
+  safeBind("btnUpgradeHP", ()=>upgrade("hp"));
+  safeBind("btnUpgradeMP", ()=>upgrade("mp"));
+  safeBind("btnUpgradeXP", ()=>upgrade("xp"));
+
+  safeBind("btnUnlockConveyor", unlockConveyor);
+  safeBind("btnConveyorGoldUp", conveyorGoldUp);
+  safeBind("btnConveyorSpeedUp", conveyorSpeedUp);
+
+  safeBind("btnNextEnemy", generateEnemy);
+
+  safeBind("btnClearLogs", ()=>{
+    document.getElementById("battleLog").innerHTML = "";
+    document.getElementById("idleLog").innerHTML = "";
+    log("<span class='big'>記録を消去しました</span>");
+  });
+
+  safeBind("btnMakeSpell", ()=>{
+    const spell = encodeSave();
+    document.getElementById("saveSpell").textContent = spell;
+    log("<span class='big'>ふっかつのじゅもんが はっこうされた！</span>");
+  });
+
+  safeBind("btnLoadSpell", ()=>{
+    const spell = document.getElementById("inputSpell").value.trim();
+    try{
+      decodeSave(spell);
+    }catch(e){
+      log("<span class='big' style='color:#ff8a9a'>じゅもんが ちがうようだ…</span>");
+    }
+  });
+
+  // ===== サイドパネル タブ切り替え =====
+  document.querySelectorAll(".side-tabs .tab-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const target = btn.dataset.tab;
+
+      document.querySelectorAll(".side .tab-page").forEach(p=>{
+        p.style.display = "none";
+      });
+
+      document.querySelectorAll(".side-tabs .tab-btn").forEach(b=>{
+        b.classList.remove("active");
+      });
+
+      document.getElementById(target).style.display = "block";
+      btn.classList.add("active");
+    });
+  });
+
+  // ===== ログ内タブ（戦闘記録 / 放置記録） =====
+  document.querySelectorAll(".log-tab-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const target = btn.dataset.log;
+      document.querySelectorAll(".log-view").forEach(v=> v.classList.remove("active"));
+      document.querySelectorAll(".log-tab-btn").forEach(b=> b.classList.remove("active"));
+      document.getElementById(target).classList.add("active");
+      btn.classList.add("active");
+    });
+  });
+
+  // --- 初期化 ---
+  renderWeaponShop();
+  renderSkillTree();
+  log("<span class='big'>深淵の刻が始まる……</span>");
+  generateEnemy();
+  updateUI();
+});
+
+
+// ===== ユーティリティ =====
+function formatBig(n){
+  if(n < 1000) return n.toString();
+
+  const units = [
+    "", "K", "M", "B", "T",
+    "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"
+  ];
+
+  let tier = 0;
+  while(n >= 1000){
+    n /= 1000;
+    tier++;
+  }
+
+  if(tier < units.length){
+    return n.toFixed(2) + units[tier];
+  }
+
+  tier -= units.length;
+  let label = "";
+
+  while(true){
+    label = String.fromCharCode(65 + (tier % 26)) + label;
+    tier = Math.floor(tier / 26) - 1;
+    if(tier < 0) break;
+  }
+
+  return n.toFixed(2) + label;
+}
+
+
+// ===== プレイヤー・敵・強化・放置レーン =====
+const player = {
+  level:1, hp:100, maxHp:100,
+  mp:50, maxMp:50,
+  atk:10, gold:0,
+  xp:0, xpToNext:20,
+  xpMul:1,
+  rebirthPoints:0,
+  sp:0,
+  weapon:null,
+  passive:{ oneHandAtkUp:false, bladeGuard:false, mpRegenUp:false },
+  skills:{ active:[] },
+  learnedSkills:[],
+
+  critRate: 5,
+  critMul: 1.5
+};
+
+const enemy = { name:"", hp:0, maxHp:0, atk:0, gold:0, xp:0, tier:1, skill:null };
+
+const MONSTER_SKILLS = {
+  "スライム":   null,
+  "ゴブリン":   { name:"パワーヒット",       mul:1.3, rate:0.20 },
+  "オーガ":     { name:"パワーストライク",   mul:1.8, rate:0.15 },
+  "ドラゴン":   { name:"フレアブレス",       mul:2.2, rate:0.06 },
+  "古代兵器":   { name:"ジャッジメント・レイ", mul:2.0, rate:0.10 },
+  "虚無の王":   { name:"アルマゲスト",       mul:3.0, rate:0.05, critBonus:10 }
+};
+
+const ROTATION_NAMES = ["スライム","ゴブリン","オーガ","ドラゴン","古代兵器","虚無の王"];
+const upgrades = { atk:1, hp:1, mp:1, xp:1 };
+
+const conveyor = {
+  unlocked:false,
+  goldLevel:1,
+  speedLevel:1,
+  baseGold:5,
+  baseInterval:1000,
+  timer:null
+};
+
+const weapons = [
+  { id:1, name:"ブロンズソード", atk:20, price:50, type:"oneHand" },
+  { id:2, name:"スチールソード", atk:50, price:200, type:"oneHand" },
+  { id:3, name:"ドラゴンキラー", atk:120, price:1000, type:"oneHand" },
+
+  { id:4, name:"ブロンズエッジ", atk:40, price:120, type:"twoHand" },
+  { id:5, name:"アイアンデューク", atk:90, price:450, type:"twoHand" },
+  { id:6, name:"ヴォイドブレイド", atk:250, price:2000, type:"twoHand" }
+];
+
+const skillTree = {
+  oneHand:[
+    { id:1,  name:"攻撃+10%",        type:"passive", cost:1, effect:"oneHandAtkUp" },
+    { id:2,  name:"ファイアソード",  type:"active",  cost:2, effect:"fireSword" },
+    { id:3,  name:"剣の舞",          type:"active",  cost:3, effect:"bladeDance" }
+  ],
+
+  twoHand:[
+    { id:10, name:"ブレードガード",  type:"passive", cost:1, effect:"bladeGuard" },
+    { id:11, name:"全身全霊斬り",    type:"active",  cost:2, effect:"fullPowerSlash" },
+    { id:12, name:"ディザスター",    type:"active",  cost:3, effect:"disaster" }
+  ],
+
+  common:[
+    { id:20, name:"MP自然回復+5%",   type:"passive", cost:1, effect:"mpRegenUp" },
+    { id:21, name:"スパーク",        type:"active",  cost:2, effect:"spark" },
+    { id:22, name:"コメットシュート", type:"active", cost:3, effect:"cometShoot" }
+  ]
+};
+
+// ===== 武器ショップ =====
+function renderWeaponShop(){
+  const box = document.getElementById("weaponList");
+  box.innerHTML = "";
+  weapons.forEach(w=>{
+    const card = document.createElement("div");
+    card.className = "weapon-card";
+
+    const typeLabel = w.type === "oneHand" ? "片手剣" : "両手剣";
+    card.innerHTML = `
+      <div class="w-info">
+        <div class="w-name">${w.name}</div>
+        <div class="w-meta"><span class="w-type">${typeLabel}</span>ATK +${w.atk} ／ ${formatBig(w.price)}G</div>
+      </div>
+    `;
+
+    const btn = document.createElement("button");
+    const owned = player.weapon && player.weapon.id === w.id;
+    btn.textContent = owned ? "装備中" : "購入して装備";
+    btn.disabled = owned;
+    btn.onclick = ()=>buyWeapon(w);
+    card.appendChild(btn);
+
+    box.appendChild(card);
+  });
+}
+function buyWeapon(w){
+  if(player.gold < w.price){ log("ゴールドが足りない！"); return; }
+  player.gold -= w.price;
+  player.weapon = w;
+  log(`<span class="big">${w.name} を装備した！</span>`);
+  renderWeaponShop();
+  updateUI();
+}
+
+// ===== スキルツリー処理 =====
+function hasSkillId(id){ return player.learnedSkills.includes(id); }
+
+function applySkillEffect(effect){
+  if(effect === "oneHandAtkUp") player.passive.oneHandAtkUp = true;
+  if(effect === "bladeGuard")   player.passive.bladeGuard   = true;
+  if(effect === "mpRegenUp")    player.passive.mpRegenUp    = true;
+
+  if(effect === "fireSword"){
+    if(!player.skills.active.includes("fireSword"))
+      player.skills.active.push("fireSword");
+  }
+  if(effect === "fullPowerSlash"){
+    if(!player.skills.active.includes("fullPowerSlash"))
+      player.skills.active.push("fullPowerSlash");
+  }
+  if(effect === "spark"){
+    if(!player.skills.active.includes("spark"))
+      player.skills.active.push("spark");
+  }
+  if(effect === "bladeDance"){
+    if(!player.skills.active.includes("bladeDance"))
+      player.skills.active.push("bladeDance");
+  }
+  if(effect === "disaster"){
+    if(!player.skills.active.includes("disaster"))
+      player.skills.active.push("disaster");
+  }
+  if(effect === "cometShoot"){
+    if(!player.skills.active.includes("cometShoot"))
+      player.skills.active.push("cometShoot");
+  }
+}
+
+function learnSkill(branch, skill){
+  if(hasSkillId(skill.id)) return;
+  if(player.sp < skill.cost){ log("SPが足りない！"); return; }
+
+  player.sp -= skill.cost;
+  player.learnedSkills.push(skill.id);
+  applySkillEffect(skill.effect);
+
+  log(`<span class="big">${skill.name} を習得！</span>`);
+  renderSkillTree();
+  updateUI();
+}
+
+function renderSkillBranch(elemId, branchKey){
+  const box = document.getElementById(elemId);
+  box.innerHTML = "";
+
+  skillTree[branchKey].forEach(sk=>{
+    const owned = hasSkillId(sk.id);
+
+    const node = document.createElement("div");
+    node.className = "skill-node" + (owned ? " learned" : "");
+
+    const info = document.createElement("div");
+    info.innerHTML = `<div class="s-name">${sk.name}</div><div class="s-cost">${owned ? "習得済み" : "必要SP: " + sk.cost}</div>`;
+
+    const btn = document.createElement("button");
+    btn.textContent = owned ? "済" : "習得";
+    btn.disabled = owned || player.sp < sk.cost;
+    btn.onclick = ()=>learnSkill(branchKey, sk);
+
+    node.appendChild(info);
+    node.appendChild(btn);
+    box.appendChild(node);
+  });
+}
+
+function renderSkillTree(){
+  document.getElementById("skillPointInfo").textContent =
+    `スキルポイント: ${player.sp}`;
+
+  renderSkillBranch("skillListOneHand", "oneHand");
+  renderSkillBranch("skillListTwoHand", "twoHand");
+  renderSkillBranch("skillListCommon", "common");
+}
+
+// ===== 攻撃力計算 =====
+function finalATK(){
+  let base = player.atk + (player.weapon ? player.weapon.atk : 0);
+
+  if(player.passive.oneHandAtkUp &&
+     player.weapon &&
+     player.weapon.type === "oneHand"){
+    base = Math.floor(base * 1.1);
+  }
+
+  return base;
+}
+
+// ===== 転生ボーナス =====
+function applyRebirthBonus(){
+  const p = player.rebirthPoints;
+  player.maxHp = Math.floor(100 * (1 + p * 0.01));
+  player.maxMp = Math.floor(50 * (1 + p * 0.01));
+  player.atk   = Math.floor(10  * (1 + p * 0.01));
+  player.xpMul = 1 + p * 0.005;
+
+  player.hp = player.maxHp;
+  player.mp = player.maxMp;
+}
+
+// ===== 敵生成 =====
+function generateEnemy(){
+  const t = enemy.tier;
+
+  enemy.maxHp = Math.floor(80 * Math.pow(1.6, t-1));
+  enemy.hp    = enemy.maxHp;
+  enemy.atk   = Math.floor(8  * Math.pow(1.55, t-1));
+  enemy.gold  = Math.floor(15 * Math.pow(1.7, t-1));
+  enemy.xp    = Math.floor(10 * Math.pow(1.65, t-1));
+
+  let baseName;
+
+  if(t < 60){
+    const names = ["スライム","ゴブリン","オーガ","ドラゴン","古代兵器","虚無の王"];
+    baseName = names[Math.min(names.length-1, Math.floor((t-1)/2))];
+    enemy.skill = null;
+  } else {
+    const idx = (t - 60) % ROTATION_NAMES.length;
+    baseName = ROTATION_NAMES[idx];
+    enemy.skill = MONSTER_SKILLS[baseName] || null;
+  }
+
+  enemy.name = baseName + "・" + t;
+
+  log(`<span class="big">${enemy.name} が現れた！</span>`);
+  updateUI();
+
+  const panel = document.getElementById("enemyPanel");
+  if(panel){
+    panel.classList.remove("fx-enemy-in");
+    void panel.offsetWidth;
+    panel.classList.add("fx-enemy-in");
+  }
+}
+
+// ===== MP自然回復 =====
+function naturalMpRegen(){
+  let rate = 0.05;
+  if(player.passive.mpRegenUp) rate += 0.05;
+  const r = Math.floor(player.maxMp * rate);
+  player.mp = Math.min(player.maxMp, player.mp + r);
+  idleLog(`MP自然回復 +${formatBig(r)}`);
+}
+
+// ===== レベルアップ =====
+function levelUp(){
+  while(player.xp >= player.xpToNext){
+    player.xp -= player.xpToNext;
+    player.level++;
+    player.sp++;
+    player.xpToNext = Math.floor(player.xpToNext * 1.4 + 10);
+
+    const hpG = Math.floor(player.maxHp * 0.25) + 20;
+    const mpG = Math.floor(player.maxMp * 0.25) + 10;
+    const atkG = Math.floor(player.atk * 0.2) + 5;
+
+    player.maxHp += hpG;
+    player.maxMp += mpG;
+    player.atk   += atkG;
+
+    player.hp = player.maxHp;
+    player.mp = player.maxMp;
+
+    log(`<span class="big">Lv${player.level}！ HP+${formatBig(hpG)} / MP+${formatBig(mpG)} / ATK+${formatBig(atkG)} / SP+1</span>`);
+  }
+  renderSkillTree();
+}
+
+// ===== 戦闘処理 =====
+function enemyCounter(){
+  if(player.passive.bladeGuard && player.weapon && player.weapon.type === "twoHand"){
+    if(Math.random() < 0.01){
+      log(`<span class="big">ブレードガード発動！ダメージ無効！</span>`);
+      return;
+    }
+  }
+
+  let dmg = enemy.atk;
+  let usedSkill = null;
+
+  if(enemy.skill && Math.random() < enemy.skill.rate){
+    usedSkill = enemy.skill;
+    dmg = Math.floor(enemy.atk * usedSkill.mul);
+  }
+
+  let isCrit = false;
+  if(usedSkill && usedSkill.critBonus){
+    isCrit = Math.random() * 100 < usedSkill.critBonus;
+    if(isCrit) dmg = Math.floor(dmg * 1.5);
+  }
+
+  player.hp -= dmg;
+
+  shakePanel("playerPanel");
+  spawnDmgNumber("playerPanel", dmg, isCrit);
+
+  if(usedSkill){
+    triggerEffect("enemyPanel", "enemy", `${usedSkill.name}！`);
+    log(`<span class="big">${enemy.name} の${usedSkill.name}！${isCrit ? "（クリティカル！）" : ""} ${formatBig(dmg)} ダメージ</span>`);
+  } else {
+    log(`${enemy.name} の反撃！ ${formatBig(dmg)} ダメージ`);
+  }
+
+  if(player.hp <= 0) playerDie();
+}
+
+function playerDie(){
+  log(`<span class="big">あなたは倒れた…敵HP全回復！</span>`);
+  enemy.hp = enemy.maxHp;
+  player.hp = Math.floor(player.maxHp * 0.5);
+  player.gold = Math.floor(player.gold * 0.9);
+}
+
+function killEnemy(){
+  enemy.hp = 0;
+  player.gold += enemy.gold;
+  const xpG = Math.floor(enemy.xp * player.xpMul);
+  player.xp += xpG;
+
+  log(`<span class="big">${enemy.name} 撃破！ +${formatBig(enemy.gold)}G +${formatBig(xpG)}XP</span>`);
+  playKillFlash("enemyPanel");
+
+  levelUp();
+  enemy.tier++;
+  naturalMpRegen();
+  updateUI();
+}
+
+function playerAttack(){
+  if(enemy.hp <= 0) return;
+
+  const dmg = finalATK();
+  enemy.hp -= dmg;
+
+  playFx("enemyPanel", getAttackFx());
+  shakePanel("enemyPanel");
+  spawnDmgNumber("enemyPanel", dmg, false);
+  log(`攻撃！ ${formatBig(dmg)} ダメージ`);
+
+  if(enemy.hp <= 0){
+    killEnemy();
+    return;
+  }
+
+  enemyCounter();
+  naturalMpRegen();
+  updateUI();
+}
+
+function escape(){
+  log("逃走した…次の敵が現れる。");
+  generateEnemy();
+}
+
+// ===== 既存スキル =====
+function heal(){
+  const cost = Math.floor(player.maxMp * 0.2);
+  if(player.mp < cost){ log("MP不足！"); return; }
+
+  player.mp -= cost;
+  player.hp = player.maxHp;
+
+  log(`<span class="big">HP全回復！</span>`);
+  triggerEffect("playerPanel", "enemy", "全回復！");
+
+  enemyCounter();
+  naturalMpRegen();
+  updateUI();
+}
+
+function skillSonic(){
+  const cost = Math.floor(player.maxMp * 0.08);
+  if(player.mp < cost){
+    log("MP不足！");
+    return;
+  }
+  player.mp -= cost;
+
+  playFx("enemyPanel", "slashMultiCyan");
+  for(let i=0; i<5; i++){
+    const base = Math.floor(finalATK() * 1.2);
+    const result = calcDamage(base);
+    const dmg = result.dmg;
+
+    enemy.hp -= dmg;
+    shakePanel("enemyPanel");
+    spawnDmgNumber("enemyPanel", dmg, result.crit);
+
+    if(result.crit){
+      log(`<span class="big">クリティカル！ ${formatBig(dmg)} ダメージ！</span>`);
+    } else {
+      log(`ソニックレイヴァー！ ${formatBig(dmg)} ダメージ！`);
+    }
+
+    if(enemy.hp <= 0){
+      killEnemy();
+      updateUI();
+      return;
+    }
+  }
+
+  enemyCounter();
+  updateUI();
+}
+
+function skillArcana(){
+  const cost = player.mp;
+  if(cost <= 0){
+    log("MP不足！");
+    return;
+  }
+  player.mp = 0;
+
+  playFx("enemyPanel", "explosionPurple");
+  for(let i=0; i<14; i++){
+    const base = Math.floor(finalATK() * 1.8);
+    const result = calcDamage(base);
+    const dmg = result.dmg;
+
+    enemy.hp -= dmg;
+    if(i % 3 === 0){ shakePanel("enemyPanel"); spawnDmgNumber("enemyPanel", dmg, result.crit); }
+
+    if(result.crit){
+      log(`<span class="big">クリティカル！ ${formatBig(dmg)} ダメージ！</span>`);
+    } else {
+      log(`ラストアルカナム！ ${formatBig(dmg)} ダメージ！`);
+    }
+
+    if(enemy.hp <= 0){
+      killEnemy();
+      updateUI();
+      return;
+    }
+  }
+
+  enemyCounter();
+  updateUI();
+}
+
+function skillRaid(){
+  const cost = Math.floor(player.maxMp * 0.3);
+  if(player.mp < cost){
+    log("MP不足！");
+    return;
+  }
+  player.mp -= cost;
+
+  playFx("enemyPanel", "slashMultiRed");
+  for(let i=0; i<3; i++){
+    const base = Math.floor(finalATK() * 1.4);
+    const result = calcDamage(base);
+    const dmg = result.dmg;
+
+    enemy.hp -= dmg;
+    shakePanel("enemyPanel");
+    spawnDmgNumber("enemyPanel", dmg, result.crit);
+
+    if(result.crit){
+      log(`<span class="big">クリティカル！ ${formatBig(dmg)} ダメージ！</span>`);
+    } else {
+      log(`ストライクレイド！ ${formatBig(dmg)} ダメージ！`);
+    }
+
+    if(enemy.hp <= 0){
+      killEnemy();
+      updateUI();
+      return;
+    }
+  }
+
+  updateUI();
+}
+
+// ===== 新アクティブスキル（スキルツリー習得） =====
+function skillFireSword(){
+  if(player.mp < 35){ log("MP不足！"); return; }
+  player.mp -= 35;
+
+  playFx("enemyPanel", "fireSwirl");
+  const base = Math.floor(finalATK() * 1.5);
+  const result = calcDamage(base);
+
+  enemy.hp -= result.dmg;
+  shakePanel("enemyPanel");
+  spawnDmgNumber("enemyPanel", result.dmg, result.crit);
+
+  if(result.crit){
+    log(`<span class="big">クリティカル！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  } else {
+    log(`<span class="big">ファイアソード！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  }
+
+  if(enemy.hp <= 0) killEnemy();
+  else enemyCounter();
+
+  updateUI();
+}
+
+function skillBladeDance(){
+  if(!player.weapon || player.weapon.type !== "oneHand"){
+    log("片手剣を装備していない！");
+    return;
+  }
+
+  if(player.mp < 50){ log("MP不足！"); return; }
+  player.mp -= 50;
+
+  playFx("enemyPanel", "spinBlades");
+  log(`<span class="big">剣の舞！ 6連撃！</span>`);
+
+  for(let i=0; i<6; i++){
+    const rate = 0.8 + Math.random() * 0.7;
+    const dmg = Math.floor(finalATK() * rate);
+    enemy.hp -= dmg;
+    shakePanel("enemyPanel");
+    spawnDmgNumber("enemyPanel", dmg, false);
+    log(`→ ${formatBig(dmg)} ダメージ`);
+    if(enemy.hp <= 0) break;
+  }
+
+  if(enemy.hp <= 0) killEnemy();
+  else enemyCounter();
+
+  updateUI();
+}
+
+function skillFullPowerSlash(){
+  if(player.mp < 60){ log("MP不足！"); return; }
+  player.mp -= 60;
+
+  playFx("enemyPanel", "slashGiant");
+  const base = Math.floor(finalATK() * 2);
+  const result = calcDamage(base);
+
+  enemy.hp -= result.dmg;
+  shakePanel("enemyPanel");
+  spawnDmgNumber("enemyPanel", result.dmg, result.crit);
+
+  if(result.crit){
+    log(`<span class="big">クリティカル！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  } else {
+    log(`<span class="big">全身全霊斬り！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  }
+
+  if(enemy.hp <= 0) killEnemy();
+  else enemyCounter();
+
+  updateUI();
+}
+
+function skillDisaster(){
+  if(!player.weapon || player.weapon.type !== "twoHand"){
+    log("両手剣を装備していない！");
+    return;
+  }
+
+  if(player.mp < 85){ log("MP不足！"); return; }
+  player.mp -= 85;
+
+  playFx("enemyPanel", "explosionDark");
+  log(`<span class="big">ディザスター！ 3連撃！</span>`);
+
+  for(let i=0; i<3; i++){
+    const base = Math.floor(finalATK() * 1.5);
+    const result = calcDamage(base);
+
+    enemy.hp -= result.dmg;
+    shakePanel("enemyPanel");
+    spawnDmgNumber("enemyPanel", result.dmg, result.crit);
+
+    if(result.crit){
+      log(`<span class="big">クリティカル！ ${formatBig(result.dmg)} ダメージ！</span>`);
+    } else {
+      log(`→ ${formatBig(result.dmg)} ダメージ`);
+    }
+
+    if(enemy.hp <= 0) break;
+  }
+
+  if(enemy.hp <= 0) killEnemy();
+  else enemyCounter();
+
+  updateUI();
+}
+
+function skillSpark(){
+  const cost = Math.floor(player.mp * 0.3);
+  if(player.mp < cost){ log("MP不足！"); return; }
+
+  player.mp -= cost;
+
+  playFx("enemyPanel", "lightning");
+  const base = finalATK() + player.mp;
+  const result = calcDamage(base);
+
+  enemy.hp -= result.dmg;
+  shakePanel("enemyPanel");
+  spawnDmgNumber("enemyPanel", result.dmg, result.crit);
+
+  if(result.crit){
+    log(`<span class="big">クリティカル！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  } else {
+    log(`<span class="big">スパーク！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  }
+
+  if(enemy.hp <= 0) killEnemy();
+  else enemyCounter();
+
+  updateUI();
+}
+
+function skillCometShoot(){
+  const cost = Math.floor(player.maxMp * 0.4);
+  if(player.mp < cost){ log("MP不足！"); return; }
+  player.mp -= cost;
+
+  playFx("enemyPanel", "comet");
+  const rate = Math.random() * 4;
+  const base = Math.floor(finalATK() * rate);
+  const result = calcDamage(base);
+
+  enemy.hp -= result.dmg;
+  shakePanel("enemyPanel");
+  spawnDmgNumber("enemyPanel", result.dmg, result.crit);
+
+  if(result.crit){
+    log(`<span class="big">クリティカル！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  } else {
+    log(`<span class="big">コメットシュート！ ${formatBig(result.dmg)} ダメージ！</span>`);
+  }
+
+  if(enemy.hp <= 0) killEnemy();
+  else enemyCounter();
+
+  updateUI();
+}
+
+// ===== 強化 =====
+function getCost(t){
+  if(t === "atk") return Math.floor(50 * Math.pow(1.8, upgrades.atk-1));
+  if(t === "hp")  return Math.floor(50 * Math.pow(1.8, upgrades.hp-1));
+  if(t === "mp")  return Math.floor(50 * Math.pow(1.8, upgrades.mp-1));
+  if(t === "xp")  return Math.floor(100 * Math.pow(2.0, upgrades.xp-1));
+}
+
+function upgrade(t){
+  const c = getCost(t);
+  if(player.gold < c){ log("ゴールド不足！"); return; }
+
+  player.gold -= c;
+
+  if(t === "atk"){
+    upgrades.atk++;
+    const g = Math.floor(player.atk * 0.6) + 20;
+    player.atk += g;
+    log(`<span class="big">ATK +${formatBig(g)}</span>`);
+  }
+  if(t === "hp"){
+    upgrades.hp++;
+    const g = Math.floor(player.maxHp * 0.6) + 50;
+    player.maxHp += g;
+    player.hp = player.maxHp;
+    log(`<span class="big">HP +${formatBig(g)}</span>`);
+  }
+  if(t === "mp"){
+    upgrades.mp++;
+    const g = Math.floor(player.maxMp * 0.6) + 20;
+    player.maxMp += g;
+    player.mp = player.maxMp;
+    log(`<span class="big">MP +${formatBig(g)}</span>`);
+  }
+  if(t === "xp"){
+    upgrades.xp++;
+    player.xpMul *= 1.25;
+    log(`<span class="big">XP倍率 ×${player.xpMul.toFixed(2)}</span>`);
+  }
+
+  updateUI();
+}
+
+// ===== 転生 =====
+function rebirth(){
+  if(player.level < 100) return;
+
+  const g = Math.floor((player.level - 100) * 0.5) + 1;
+  player.rebirthPoints += g;
+
+  log(`<span class="big">転生！ +${g}pt</span>`);
+
+  upgrades.atk = 1;
+  upgrades.hp  = 1;
+  upgrades.mp  = 1;
+  upgrades.xp  = 1;
+
+  player.level = 1;
+  player.gold = 0;
+  player.xp = 0;
+  player.xpToNext = 20;
+  enemy.tier = 1;
+
+  applyRebirthBonus();
+  generateEnemy();
+  updateUI();
+}
+
+// ===== 放置レーン =====
+function updateConveyorUI(){
+  const s = conveyor.unlocked ? "稼働中" : "未解放";
+  document.getElementById("conveyorStatus").textContent = `状態: ${s}`;
+
+  const visual = document.getElementById("conveyorVisual");
+
+  if(!conveyor.unlocked){
+    document.getElementById("conveyorInfo").textContent = "100Gで解放できます。";
+    document.getElementById("btnUnlockConveyor").disabled = player.gold < 100;
+    document.getElementById("btnConveyorGoldUp").disabled = true;
+    document.getElementById("btnConveyorSpeedUp").disabled = true;
+    if(visual){ visual.textContent = "未稼働"; visual.classList.remove("active"); }
+    return;
+  }
+
+  const income = conveyor.baseGold * conveyor.goldLevel;
+  const interval = conveyor.baseInterval / conveyor.speedLevel;
+
+  const goldCost = Math.floor(50 * Math.pow(1.8, conveyor.goldLevel-1));
+  const speedCost = Math.floor(50 * Math.pow(1.8, conveyor.speedLevel-1));
+
+  document.getElementById("conveyorInfo").innerHTML =
+    `収益: ${income}G / ${(interval/1000).toFixed(2)}秒<br>` +
+    `収益アップ必要金額: ${formatBig(goldCost)}G<br>` +
+    `速度アップ必要金額: ${formatBig(speedCost)}G`;
+
+  document.getElementById("btnUnlockConveyor").disabled = true;
+  document.getElementById("btnConveyorGoldUp").disabled = false;
+  document.getElementById("btnConveyorSpeedUp").disabled = false;
+
+  if(visual){ visual.textContent = `+${income}G / ${(interval/1000).toFixed(2)}s`; visual.classList.add("active"); }
+}
+
+function unlockConveyor(){
+  if(player.gold < 100) return;
+
+  player.gold -= 100;
+  conveyor.unlocked = true;
+
+  idleLog(`<span class="big">放置レーン解放！</span>`);
+
+  startConveyor();
+  updateUI();
+}
+
+function startConveyor(){
+  if(conveyor.timer) clearInterval(conveyor.timer);
+
+  conveyor.timer = setInterval(()=>{
+    const g = conveyor.baseGold * conveyor.goldLevel;
+    player.gold += g;
+    idleLog(`+${g}G`);
+    updateUI();
+  }, conveyor.baseInterval / conveyor.speedLevel);
+}
+
+function conveyorGoldUp(){
+  const c = Math.floor(50 * Math.pow(1.8, conveyor.goldLevel-1));
+  if(player.gold < c){ idleLog("ゴールド不足！"); return; }
+
+  player.gold -= c;
+  conveyor.goldLevel++;
+
+  idleLog(`<span class="big">収益アップ！</span>`);
+
+  startConveyor();
+  updateUI();
+}
+
+function conveyorSpeedUp(){
+  const c = Math.floor(50 * Math.pow(1.8, conveyor.speedLevel-1));
+  if(player.gold < c){ idleLog("ゴールド不足！"); return; }
+
+  player.gold -= c;
+  conveyor.speedLevel++;
+
+  idleLog(`<span class="big">速度アップ！</span>`);
+
+  startConveyor();
+  updateUI();
+}
+
+// ===== UI更新 =====
+function updateUI(){
+  document.getElementById("playerLevel").textContent = `Lv.${player.level}`;
+  document.getElementById("playerHP").textContent = `${formatBig(player.hp)} / ${formatBig(player.maxHp)}`;
+  document.getElementById("playerMP").textContent = `${formatBig(player.mp)} / ${formatBig(player.maxMp)}`;
+  document.getElementById("playerATK").textContent = `攻撃力: ${formatBig(finalATK())}`;
+  document.getElementById("playerGold").textContent = `Gold: ${formatBig(player.gold)}`;
+  document.getElementById("rebirthInfo").textContent = `転生Pt: ${player.rebirthPoints} / SP: ${player.sp}`;
+
+  document.getElementById("playerWeapon").textContent =
+    player.weapon ? `武器: ${player.weapon.name}` : "武器: なし";
+
+  const hpBar = document.getElementById("hpBar");
+  hpBar.style.width = (player.hp / player.maxHp * 100) + "%";
+  hpBar.closest(".gauge-hp").classList.toggle("low", (player.hp / player.maxHp) < 0.3);
+
+  document.getElementById("mpBar").style.width = (player.mp / player.maxMp * 100) + "%";
+  document.getElementById("xpBar").style.width = (player.xp / player.xpToNext * 100) + "%";
+  document.getElementById("playerXP").textContent = `${formatBig(player.xp)} / ${formatBig(player.xpToNext)}`;
+
+  document.getElementById("enemyName").textContent = `名前: ${enemy.name}`;
+  document.getElementById("enemyHP").textContent = `${formatBig(enemy.hp)} / ${formatBig(enemy.maxHp)}`;
+  document.getElementById("enemyHpBar").style.width = (enemy.hp / enemy.maxHp * 100) + "%";
+  document.getElementById("enemyATK").textContent = `攻撃力: ${formatBig(enemy.atk)}`;
+  document.getElementById("enemyReward").textContent = `報酬: ${formatBig(enemy.gold)}G / ${formatBig(enemy.xp)}XP`;
+
+  document.getElementById("btnAttack").disabled = enemy.hp <= 0;
+  document.getElementById("btnNextEnemy").disabled = enemy.hp > 0;
+  document.getElementById("btnRebirth").disabled = player.level < 100;
+
+  const atkC = getCost("atk"), hpC = getCost("hp"), mpC = getCost("mp"), xpC = getCost("xp");
+  document.getElementById("upgradeInfo").innerHTML =
+    `<div class="info-line">攻撃力強化: <b>${formatBig(atkC)}G</b></div>` +
+    `<div class="info-line">最大HP強化: <b>${formatBig(hpC)}G</b></div>` +
+    `<div class="info-line">最大MP強化: <b>${formatBig(mpC)}G</b></div>` +
+    `<div class="info-line">XP倍率強化: <b>${formatBig(xpC)}G</b></div>`;
+
+  document.getElementById("btnUpgradeATK").disabled = player.gold < atkC;
+  document.getElementById("btnUpgradeHP").disabled = player.gold < hpC;
+  document.getElementById("btnUpgradeMP").disabled = player.gold < mpC;
+  document.getElementById("btnUpgradeXP").disabled = player.gold < xpC;
+
+  document.getElementById("btnSkill1").disabled =
+    player.level < 10 || player.mp < 20 || enemy.hp <= 0;
+
+  document.getElementById("btnSkill2").disabled =
+    player.level < 35 || player.mp <= 0 || enemy.hp <= 0;
+
+  document.getElementById("btnSkill3").disabled =
+    player.level < 40 || player.mp < Math.floor(player.maxMp * 0.4) || enemy.hp <= 0;
+
+  document.getElementById("btnFireSword").disabled =
+    !player.skills.active.includes("fireSword") ||
+    !player.weapon || player.weapon.type !== "oneHand" ||
+    player.mp < 35 || enemy.hp <= 0;
+
+  document.getElementById("btnFullPowerSlash").disabled =
+    !player.skills.active.includes("fullPowerSlash") ||
+    !player.weapon || player.weapon.type !== "twoHand" ||
+    player.mp < 60 || enemy.hp <= 0;
+
+  const sparkCost = Math.floor(player.maxMp * 0.3);
+  const hasSpark = player.learnedSkills.includes(21);
+  document.getElementById("btnSpark").disabled =
+    !hasSpark || player.mp < sparkCost || enemy.hp <= 0;
+
+  document.getElementById("btnBladeDance").disabled =
+    !player.skills.active.includes("bladeDance") ||
+    !player.weapon || player.weapon.type !== "oneHand" ||
+    player.mp < 50 || enemy.hp <= 0;
+
+  document.getElementById("btnDisaster").disabled =
+    !player.skills.active.includes("disaster") ||
+    !player.weapon || player.weapon.type !== "twoHand" ||
+    player.mp < 85 || enemy.hp <= 0;
+
+  const cometCost = Math.floor(player.maxMp * 0.4);
+  document.getElementById("btnCometShoot").disabled =
+    !player.skills.active.includes("cometShoot") ||
+    player.mp < cometCost || enemy.hp <= 0;
+
+  updateConveyorUI();
+  updateSkillTreeUI();
+  renderWeaponShop();
+
+  const topLv = document.getElementById("topLevel");
+  const topGold = document.getElementById("topGold");
+  if(topLv && topGold){
+    topLv.querySelector(".num").textContent = `Lv.${player.level}`;
+    topGold.querySelector(".num").textContent = formatBig(player.gold);
+  }
+}
+
+// ===== ログ制限 =====
+function pushLog(targetId, message){
+  const box = document.getElementById(targetId);
+  const line = document.createElement("div");
+  line.className = "log-line";
+  line.innerHTML = message;
+  box.appendChild(line);
+
+  while(box.children.length > 100){
+    box.removeChild(box.firstChild);
+  }
+
+  box.scrollTop = box.scrollHeight;
+}
+
+function log(m){
+  pushLog("battleLog", `<span class="battle-log">${m}</span>`);
+}
+
+function idleLog(m){
+  pushLog("idleLog", `<span class="idle-log">${m}</span>`);
+}
+
+function makeSaveData(){
+  return {
+    version: 1,
+    player: {
+      level: player.level,
+      hp: player.hp,
+      maxHp: player.maxHp,
+      mp: player.mp,
+      maxMp: player.maxMp,
+      atk: player.atk,
+      gold: player.gold,
+      xp: player.xp,
+      xpToNext: player.xpToNext,
+      xpMul: player.xpMul,
+      rebirthPoints: player.rebirthPoints,
+      sp: player.sp,
+      weapon: player.weapon,
+      passive: player.passive,
+      skills: player.skills,
+      learnedSkills: player.learnedSkills
+    },
+    upgrades,
+    enemyTier: enemy.tier,
+    conveyor
+  };
+}
+
+function encodeSave(){
+  const json = JSON.stringify(makeSaveData());
+
+  const bytes = new TextEncoder().encode(json);
+  let binary = "";
+  bytes.forEach(b => binary += String.fromCharCode(b));
+
+  const b64 = btoa(binary);
+
+  return b64.replace(/\+/g,"-").replace(/\//g,"_").replace(/=/g,".");
+}
+
+function decodeSave(spell){
+  const b64 = spell.replace(/-/g,"+").replace(/_/g,"/").replace(/\./g,"=");
+
+  const binary = atob(b64);
+
+  const bytes = new Uint8Array(binary.length);
+  for(let i=0; i<binary.length; i++){
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const json = new TextDecoder().decode(bytes);
+  const data = JSON.parse(json);
+
+  const p = data.player;
+
+  if(p.skills) player.skills.active = [...p.skills.active];
+  if(p.learnedSkills) player.learnedSkills = [...p.learnedSkills];
+
+  if(p.passive) Object.assign(player.passive, p.passive);
+
+  if(p.weapon){
+    const w = weapons.find(w => w.id === p.weapon.id);
+    player.weapon = w ?? null;
+  }
+
+  player.level = p.level;
+  player.hp = p.hp;
+  player.maxHp = p.maxHp;
+  player.mp = p.mp;
+  player.maxMp = p.maxMp;
+  player.atk = p.atk;
+  player.gold = p.gold;
+  player.xp = p.xp;
+  player.xpToNext = p.xpToNext;
+  player.xpMul = p.xpMul;
+  player.rebirthPoints = p.rebirthPoints;
+
+  player.sp = p.sp;
+
+  Object.assign(upgrades, data.upgrades);
+  enemy.tier = data.enemyTier;
+  Object.assign(conveyor, data.conveyor);
+
+  generateEnemy();
+  renderSkillTree();
+  renderWeaponShop();
+  updateUI();
+  log("<span class='big'>ふっかつのじゅもんが よみこまれた！</span>");
+
+  if(conveyor.unlocked) startConveyor();
+}
+
+// ===== ダメージ計算 =====
+function calcDamage(base){
+  const isCrit = Math.random() * 100 < player.critRate;
+
+  if(isCrit){
+    triggerEffect("playerPanel", "crit", "クリティカル！");
+    return {
+      dmg: Math.floor(base * player.critMul),
+      crit: true
+    };
+  }
+
+  return {
+    dmg: base,
+    crit: false
+  };
+}
+
+// ===== 演出：パネルグロー＋ポップテキスト =====
+function triggerEffect(panelId, type, text){
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+
+  const glowClass = type === "crit" ? "fx-glow-crit" : "fx-glow-enemy";
+
+  panel.classList.remove(glowClass);
+  void panel.offsetWidth;
+  panel.classList.add(glowClass);
+  setTimeout(() => panel.classList.remove(glowClass), 650);
+
+  const popup = document.createElement("div");
+  popup.className = `fx-popup ${type === "crit" ? "fx-crit" : "fx-enemy"}`;
+  popup.textContent = text;
+  panel.appendChild(popup);
+  setTimeout(() => popup.remove(), 1200);
+}
+
+// ===== 新規演出：ダメージ数値・画面シェイク・撃破フラッシュ =====
+function spawnDmgNumber(panelId, dmg, isCrit){
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+
+  const el = document.createElement("div");
+  el.className = `fx-dmg ${isCrit ? "crit" : "normal"}`;
+  el.style.left = (45 + Math.random()*10) + "%";
+  el.textContent = (isCrit ? "★" : "") + formatBig(dmg);
+  panel.appendChild(el);
+  setTimeout(()=> el.remove(), 900);
+}
+
+function shakePanel(panelId){
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+  panel.classList.remove("fx-shake");
+  void panel.offsetWidth;
+  panel.classList.add("fx-shake");
+  setTimeout(()=> panel.classList.remove("fx-shake"), 340);
+}
+
+function playKillFlash(panelId){
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+  const el = document.createElement("div");
+  el.className = "fx-kill-flash";
+  panel.appendChild(el);
+  setTimeout(()=> el.remove(), 420);
+}
+
+// ===== 技ごと・武器種ごとの攻撃エフェクト =====
+const FX_LIBRARY = {
+  punch: {
+    cls: "fx-punch-burst",
+    svg: `<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="27" fill="none" stroke="#e8b64a" stroke-width="6"/><circle cx="40" cy="40" r="10" fill="#f5d999"/></svg>`
+  },
+  slashSingle: {
+    cls: "fx-slash-single",
+    svg: `<svg viewBox="0 0 170 170"><line x1="22" y1="148" x2="148" y2="22" stroke="#ece6f7" stroke-width="8" stroke-linecap="round"/><line x1="42" y1="152" x2="142" y2="42" stroke="#c9a3f5" stroke-width="3" stroke-linecap="round"/></svg>`
+  },
+  slashCross: {
+    cls: "fx-slash-cross",
+    svg: `<svg viewBox="0 0 190 190"><line x1="22" y1="168" x2="168" y2="22" stroke="#e8b64a" stroke-width="10" stroke-linecap="round"/><line x1="22" y1="22" x2="168" y2="168" stroke="#f5d999" stroke-width="10" stroke-linecap="round"/></svg>`
+  },
+  slashMultiCyan: {
+    cls: "fx-slash-multi",
+    svg: `<svg viewBox="0 0 180 180">
+      <line x1="10" y1="146" x2="170" y2="34" stroke="#8fe3f0" stroke-width="5"/>
+      <line x1="22" y1="168" x2="158" y2="12" stroke="#5ecbe0" stroke-width="5"/>
+      <line x1="34" y1="124" x2="146" y2="74" stroke="#b8f0f8" stroke-width="4"/>
+    </svg>`
+  },
+  slashMultiRed: {
+    cls: "fx-slash-multi",
+    svg: `<svg viewBox="0 0 180 180">
+      <line x1="10" y1="146" x2="170" y2="34" stroke="#ff8a9a" stroke-width="5"/>
+      <line x1="22" y1="168" x2="158" y2="12" stroke="#e0475a" stroke-width="5"/>
+      <line x1="34" y1="124" x2="146" y2="74" stroke="#c22e42" stroke-width="4"/>
+    </svg>`
+  },
+  explosionPurple: {
+    cls: "fx-explosion",
+    svg: `<svg viewBox="0 0 230 230"><circle cx="115" cy="115" r="70" fill="#9b5de5" opacity="0.45"/><circle cx="115" cy="115" r="42" fill="#c9a3f5" opacity="0.8"/><circle cx="115" cy="115" r="17" fill="#f3e8ff"/></svg>`
+  },
+  explosionDark: {
+    cls: "fx-explosion",
+    svg: `<svg viewBox="0 0 230 230"><circle cx="115" cy="115" r="64" fill="#3a1a66" opacity="0.6"/><circle cx="115" cy="115" r="36" fill="#6f38c2" opacity="0.85"/><circle cx="115" cy="115" r="14" fill="#e4d3ff"/></svg>`
+  },
+  fireSwirl: {
+    cls: "fx-fire-swirl",
+    svg: `<svg viewBox="0 0 170 170"><path d="M85 20 C108 55 118 78 85 148 C52 78 62 55 85 20Z" fill="#e0475a"/><path d="M85 46 C97 68 102 84 85 116 C68 84 73 68 85 46Z" fill="#e8b64a"/></svg>`
+  },
+  spinBlades: {
+    cls: "fx-spin-blades",
+    svg: `<svg viewBox="0 0 180 180"><g stroke="#c9a3f5" stroke-width="6" stroke-linecap="round">
+      <line x1="90" y1="18" x2="90" y2="72"/>
+      <line x1="90" y1="108" x2="90" y2="162"/>
+      <line x1="18" y1="90" x2="72" y2="90"/>
+      <line x1="108" y1="90" x2="162" y2="90"/>
+    </g></svg>`
+  },
+  slashGiant: {
+    cls: "fx-slash-giant",
+    svg: `<svg viewBox="0 0 260 260"><line x1="24" y1="236" x2="236" y2="24" stroke="#e8b64a" stroke-width="15" stroke-linecap="round"/><line x1="48" y1="236" x2="236" y2="48" stroke="#f5d999" stroke-width="5" stroke-linecap="round"/></svg>`
+  },
+  lightning: {
+    cls: "fx-lightning",
+    svg: `<svg viewBox="0 0 120 220"><polyline points="60,0 36,88 66,88 24,220 84,110 54,110 84,0" fill="#f5d999"/></svg>`
+  },
+  comet: {
+    cls: "fx-comet",
+    svg: `<svg viewBox="0 0 250 250"><line x1="205" y1="45" x2="115" y2="135" stroke="#8fe3f0" stroke-width="4" opacity="0.6"/><circle cx="115" cy="135" r="23" fill="#5ecbe0"/><circle cx="115" cy="135" r="10" fill="#e4faff"/></svg>`
+  }
+};
+
+function playFx(panelId, fxType){
+  const fx = FX_LIBRARY[fxType];
+  if(!fx) return;
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+  const el = document.createElement("div");
+  el.className = `fx-anim ${fx.cls}`;
+  el.innerHTML = fx.svg;
+  panel.appendChild(el);
+  setTimeout(()=> el.remove(), 900);
+}
+
+function getAttackFx(){
+  if(!player.weapon) return "punch";
+  if(player.weapon.type === "oneHand") return "slashSingle";
+  if(player.weapon.type === "twoHand") return "slashCross";
+  return "punch";
+}
+
+function updateSkillTreeUI(){
+  const spElem = document.getElementById("skillPointInfo");
+  if(spElem){
+    spElem.textContent = "スキルポイント: " + player.sp;
+  }
+}
+
+</script>
+</body>
+</html>
