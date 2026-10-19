@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>脱出ゲーム：忘却の書斎</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark;--br:#c9a24b;--ink:#e9dfc8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#07070a;color:var(--ink);font-family:'Hiragino Mincho ProN','Yu Mincho',serif;user-select:none}
+#g{max-width:900px;height:100%;margin:auto;display:flex;flex-direction:column;border:1px solid #3a2f22}
+#top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#0a0806;font-size:14px;color:#a89a7c;border-bottom:1px solid #3a2f22}
+#top button{background:#221a12;color:var(--br);border:1px solid #6b5628;border-radius:4px;padding:3px 10px;font-family:inherit}
+#view{position:relative;flex:1;overflow:hidden;background:repeating-linear-gradient(90deg,#00000014 0 2px,transparent 2px 46px),radial-gradient(ellipse at 50% 28%,#4a3828,#17100b 75%)}
+.wall{position:absolute;inset:0;display:none}.wall.on{display:block;animation:f .4s}
+@keyframes f{from{opacity:0}}
+.wall::before{content:"";position:absolute;left:0;right:0;bottom:22%;height:14%;background:linear-gradient(#3a2415,#22140b);border-top:3px solid #6b4a2a}
+.floor{position:absolute;left:0;right:0;bottom:0;height:22%;background:repeating-linear-gradient(90deg,#0004 0 2px,transparent 2px 60px),linear-gradient(#2b1b10,#120b06);border-top:2px solid #000}
+.hs{position:absolute;transform:translate(-50%,-50%);cursor:pointer;text-align:center;transition:filter .2s,transform .2s;background:none;border:0;padding:0;color:#ddd;font-family:inherit}
+.hs:hover{filter:brightness(1.35) drop-shadow(0 0 8px #c9a24b88);transform:translate(-50%,-50%) scale(1.04)}
+.hs svg{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 6px #000a)}
+.hs .l{display:inline-block;margin-top:4px;font-size:11px;color:#cdbf9f;background:#0007;padding:1px 8px;border-radius:9px}
+.nav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:44px;height:64px;background:#000a;color:var(--br);border:1px solid #6b5628;font-size:24px;border-radius:6px}
+#msg{min-height:76px;padding:10px 14px;background:#100c08;border-top:2px solid #5a4628;font-size:15px;line-height:1.6;white-space:pre-line}
+#inv{display:flex;gap:8px;align-items:center;padding:8px 12px;background:#050403;overflow-x:auto;min-height:68px}
+.it{flex:none;width:54px;height:54px;border:2px solid #4a3d28;border-radius:8px;background:radial-gradient(#2a2118,#120d09);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:3px}
+.it svg{width:100%;height:100%}
+.it.s{border-color:var(--br);box-shadow:0 0 12px #c9a24baa}
+#modal{position:absolute;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:20;padding:12px}
+#modal.on{display:flex}
+#box{background:linear-gradient(#2a2016,#1a130d);border:2px solid #7a6030;border-radius:10px;padding:16px;max-width:420px;width:100%;max-height:90%;overflow:auto;text-align:center}
+#box p{line-height:1.8;font-size:15px;margin:8px 0;white-space:pre-line;text-align:left}
+.b{background:#33261a;color:var(--ink);border:1px solid #7a6030;border-radius:6px;padding:8px 14px;margin:3px;font-family:inherit;font-size:16px}
+.dial{display:inline-flex;flex-direction:column;align-items:center;margin:4px}
+.dial button{width:46px;background:linear-gradient(#e2c26a,#9a7830);color:#2a1a08;border:0;padding:4px;border-radius:4px}
+.dial div{width:46px;font:bold 28px Georgia,serif;background:#0b0804;color:#f2d77a;padding:6px 0;margin:3px 0;border:1px solid #6b5628;box-shadow:inset 0 0 8px #000}
+.bk{display:inline-block;margin:0 2px;border:0;border-radius:3px 3px 0 0;color:#fff;writing-mode:vertical-rl;font-family:inherit;font-size:13px;padding:6px 2px;vertical-align:bottom;cursor:pointer;border-top:3px solid #fff3;box-shadow:inset -3px 0 4px #0006}
+.bk.pr{transform:translateY(-12px)}
+.uv{color:#c8f;text-shadow:0 0 8px #a5f;font:bold 30px monospace}
+#end{position:absolute;inset:0;background:#f4ecd8;color:#000;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;text-align:center;padding:20px}
+</style></head><body>
+<div id="g">
+<div id="top"><b>忘却の書斎</b><span id="wn"></span><button id="hint">ヒント</button></div>
+<div id="view">
+<button class="nav" style="left:6px" onclick="turn(-1)">❮</button><button class="nav" style="right:6px" onclick="turn(1)">❯</button>
+<div id="modal"><div id="box"></div></div>
+<div id="end"><h1 style="letter-spacing:.2em;font-size:44px">ESCAPED</h1><p id="endt"></p><button class="b" style="color:#000;background:#eee" onclick="location.reload()">もう一度</button></div>
+</div>
+<div id="msg"></div><div id="inv"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const WALLS=['北','東','南','西'];let wall=2,sel=null,inv=[],F={},seq=[],dials={};
+
+const DEFS='<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6df8a"/><stop offset=".5" stop-color="#c9a24b"/><stop offset="1" stop-color="#7d5e22"/></linearGradient><linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6a4426"/><stop offset=".5" stop-color="#4b2e19"/><stop offset="1" stop-color="#34200f"/></linearGradient><linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1e6c8"/><stop offset="1" stop-color="#cdb98c"/></linearGradient><linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9aa0a8"/><stop offset="1" stop-color="#40444b"/></linearGradient><linearGradient id="beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b57cff" stop-opacity=".8"/><stop offset="1" stop-color="#b57cff" stop-opacity="0"/></linearGradient></defs></svg>';
+const sv=(vb,b)=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
+const ln=(x,y,w,n,g=6,c='#7a6642')=>Array.from({length:n},(_,i)=>`<rect x="${x}" y="${y+i*g}" width="${w-(i%3==2?10:0)}" height="2" fill="${c}"/>`).join('');
+const flash=(on)=>sv('0 0 64 64',(on?'<polygon points="40,30 64,12 64,52" fill="url(#beam)"/>':'')+'<g transform="rotate(-25 32 32)"><rect x="6" y="26" width="26" height="12" rx="3" fill="#2d3138" stroke="#555a63"/><rect x="12" y="26" width="3" height="12" fill="#777d87"/><rect x="20" y="26" width="3" height="12" fill="#777d87"/><path d="M32 22h8l4 -4v28l-4 -4h-8z" fill="url(#steel)"/><ellipse cx="44" cy="32" rx="3" ry="12" fill="'+(on?'#d9b8ff':'#4b3a66')+'"/></g>');
+const IC={
+bat:sv('0 0 64 64','<rect x="8" y="22" width="44" height="22" rx="4" fill="#2b5d54"/><rect x="8" y="22" width="44" height="7" rx="3" fill="#3f8174"/><rect x="52" y="28" width="6" height="10" rx="2" fill="url(#brass)"/><path d="M32 25l-6 10h5l-2 7 8-11h-5z" fill="#f2d77a"/>'),
+uv:flash(0),uvon:flash(1),
+shaft:sv('0 0 64 64','<path d="M6 29h46v7H6z" fill="url(#brass)"/><path d="M6 29l-2 3 2 4" fill="none" stroke="#7d5e22" stroke-width="2"/><rect x="38" y="36" width="6" height="9" fill="url(#brass)"/><rect x="47" y="36" width="5" height="6" fill="url(#brass)"/>'),
+head:sv('0 0 64 64','<circle cx="26" cy="32" r="15" fill="none" stroke="url(#brass)" stroke-width="8"/><circle cx="26" cy="32" r="5" fill="#2a1a08"/><rect x="40" y="29" width="14" height="7" fill="url(#brass)"/><path d="M54 29l2 3-2 4" fill="none" stroke="#7d5e22" stroke-width="2"/>'),
+key:sv('0 0 64 64','<g transform="rotate(-35 32 32)"><circle cx="14" cy="32" r="10" fill="none" stroke="url(#brass)" stroke-width="6"/><rect x="22" y="29" width="36" height="6" fill="url(#brass)"/><rect x="46" y="35" width="5" height="8" fill="url(#brass)"/><rect x="54" y="35" width="4" height="5" fill="url(#brass)"/></g>'),
+lh:sv('0 0 64 64','<path d="M10 8h30l-4 8 5 8-6 8 6 8-5 8 4 8H10z" fill="url(#paper)" stroke="#8a7650"/>'+ln(15,16,20,5,8)),
+rh:sv('0 0 64 64','<path d="M24 8h30v48H24l4-8-5-8 6-8-6-8 5-8z" fill="url(#paper)" stroke="#8a7650"/>'+ln(32,16,18,5,8)),
+letter:sv('0 0 64 64','<rect x="10" y="8" width="44" height="48" rx="2" fill="url(#paper)" stroke="#8a7650"/>'+ln(16,15,30,5,6)+'<circle cx="42" cy="46" r="8" fill="#9c1f26"/><circle cx="42" cy="46" r="4.5" fill="none" stroke="#d4545a"/>')
+};
+const BKC=['#7a2a2a','#2a4f7a','#2f6b3a','#8a6a25','#4a3a6a','#6a3a2a','#2a5a5a'];
+const books=(x,y,w,h,n)=>{let s='',cx=x;for(let i=0;i<n;i++){const bw=6+(i*7)%5,bh=h-6-(i*5)%12;s+=`<rect x="${cx}" y="${y+h-bh}" width="${bw}" height="${bh}" fill="${BKC[(i*3+n)%7]}"/><rect x="${cx}" y="${y+h-bh+4}" width="${bw}" height="2" fill="#f2d77a88"/>`;cx+=bw+1;if(cx>x+w-8)break}return s};
+const OBJ={
+door:sv('0 0 120 190','<path d="M4 190V70Q4 6 60 6Q116 6 116 70V190z" fill="#1b110a" stroke="#6b5628" stroke-width="3"/><path d="M12 190V72Q12 14 60 14Q108 14 108 72V190z" fill="url(#wood)"/><path d="M60 14V190" stroke="#1b110a" stroke-width="2"/><g fill="none" stroke="#1b110a" stroke-width="2"><rect x="22" y="70" width="30" height="42" rx="2"/><rect x="68" y="70" width="30" height="42" rx="2"/><rect x="22" y="124" width="30" height="52" rx="2"/><rect x="68" y="124" width="30" height="52" rx="2"/><path d="M24 62Q24 28 60 24Q96 28 96 62z"/></g><circle cx="52" cy="104" r="9" fill="url(#brass)" stroke="#5a4218"/><path d="M52 99a3 3 0 1 1 0 6 3 3 0 0 1 0 -6zM51 104h2l1 7h-4z" fill="#1a1006"/><rect x="62" y="96" width="38" height="18" rx="3" fill="#2a2118" stroke="url(#brass)" stroke-width="2"/><g fill="#f2d77a"><circle cx="70" cy="105" r="3"/><circle cx="78" cy="105" r="3"/><circle cx="86" cy="105" r="3"/><circle cx="94" cy="105" r="3"/></g>'),
+shelf:sv('0 0 120 150','<rect x="4" y="4" width="112" height="144" fill="url(#wood)" stroke="#1b110a" stroke-width="2"/><rect x="10" y="10" width="100" height="132" fill="#150d07"/><g fill="url(#wood)"><rect x="10" y="48" width="100" height="5"/><rect x="10" y="92" width="100" height="5"/></g>'+books(13,12,94,36,9)+books(13,56,94,36,10)+books(13,100,94,40,9)+'<rect x="0" y="0" width="120" height="8" fill="#5a3a22"/>'),
+clock:sv('0 0 64 64','<circle cx="32" cy="32" r="29" fill="url(#brass)" stroke="#4b3512" stroke-width="2"/><circle cx="32" cy="32" r="23" fill="#efe3c4"/><g stroke="#3b2a14" stroke-width="2">'+[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>{const a=i*Math.PI/6,s=Math.sin(a),c=-Math.cos(a);return `<line x1="${32+s*19}" y1="${32+c*19}" x2="${32+s*22}" y2="${32+c*22}"/>`}).join('')+'</g><path d="M32 32L44 37" stroke="#2a1a08" stroke-width="3" stroke-linecap="round"/><path d="M32 32L12.5 28" stroke="#2a1a08" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="32" r="2.5" fill="#9c1f26"/>'),
+news:sv('0 0 90 64','<g transform="rotate(-5 45 32)"><rect x="8" y="6" width="74" height="52" fill="url(#paper)" stroke="#8a7650"/><rect x="14" y="12" width="62" height="9" fill="#3b2f1c"/>'+ln(14,26,28,5,6)+ln(48,26,28,5,6)+'<path d="M45 6v52" stroke="#a89468" stroke-dasharray="3 2"/></g>'),
+diary:sv('0 0 64 64','<rect x="10" y="8" width="44" height="50" rx="3" fill="#5b2a1c" stroke="#2a120a" stroke-width="2"/><rect x="14" y="8" width="3" height="50" fill="#3b1a10"/><rect x="24" y="16" width="22" height="14" rx="1" fill="none" stroke="url(#brass)" stroke-width="2"/><path d="M40 58v6l3-3 3 3v-6" fill="#9c1f26"/><path d="M10 14h4M10 52h4" stroke="url(#brass)" stroke-width="3"/>'),
+drawer:sv('0 0 130 110','<rect x="4" y="6" width="122" height="88" rx="3" fill="url(#wood)" stroke="#1b110a" stroke-width="2"/><rect x="4" y="94" width="10" height="14" fill="#2a1a0c"/><rect x="116" y="94" width="10" height="14" fill="#2a1a0c"/><g fill="none" stroke="#1b110a" stroke-width="2"><rect x="12" y="14" width="106" height="34" rx="2"/><rect x="12" y="54" width="106" height="34" rx="2"/></g><rect x="52" y="27" width="26" height="8" rx="4" fill="url(#brass)"/><circle cx="65" cy="71" r="14" fill="url(#brass)" stroke="#4b3512" stroke-width="2"/><circle cx="65" cy="71" r="9" fill="#1d1408"/><path d="M65 71L69 65" stroke="#f2d77a" stroke-width="2"/><g fill="#f2d77a"><circle cx="65" cy="64" r="1"/><circle cx="72" cy="71" r="1"/><circle cx="65" cy="78" r="1"/><circle cx="58" cy="71" r="1"/></g>'),
+lamp:sv('0 0 64 100','<path d="M16 8h32l8 36H8z" fill="#d8c08a" stroke="#6b5628" stroke-width="2"/><path d="M24 8l-4 36M40 8l4 36" stroke="#6b5628" stroke-opacity=".5"/><rect x="29" y="44" width="6" height="36" fill="url(#brass)"/><ellipse cx="32" cy="88" rx="18" ry="8" fill="url(#brass)" stroke="#4b3512"/>'),
+fire:sv('0 0 150 120','<rect x="4" y="4" width="142" height="18" rx="2" fill="#6b5a48" stroke="#1b110a" stroke-width="2"/><rect x="14" y="22" width="122" height="96" fill="#4f4235" stroke="#1b110a" stroke-width="2"/><g stroke="#2a2118" stroke-width="2" opacity=".6"><path d="M14 54h122M14 86h122M50 22v32M96 22v32M32 54v32M78 54v32M118 54v32M50 86v32M96 86v32"/></g><path d="M34 118V58Q34 40 75 40Q116 40 116 58v60z" fill="#0b0705"/><ellipse cx="75" cy="112" rx="34" ry="5" fill="#3a3a3a"/><rect x="48" y="102" width="52" height="8" rx="4" fill="#1d1612" transform="rotate(-4 75 106)"/><rect x="54" y="95" width="44" height="7" rx="3" fill="#2a1d16" transform="rotate(5 75 98)"/>'),
+paint:sv('0 0 120 94','<rect x="3" y="3" width="114" height="88" rx="2" fill="url(#brass)" stroke="#4b3512" stroke-width="2"/><rect x="11" y="11" width="98" height="72" fill="#1e2a3a"/><rect x="11" y="62" width="98" height="21" fill="#cfd8e0"/><circle cx="88" cy="28" r="9" fill="#e8ecf0"/><g stroke="#0d1218" stroke-width="3" fill="none" stroke-linecap="round"><path d="M30 70V38M30 52l-8-8M30 46l8-8M60 70V32M60 50l-10-10M60 42l10-10M60 36l-5-6M88 70V46M88 56l-6-5M88 52l6-5"/></g>'),
+safe:sv('0 0 110 110','<rect x="4" y="4" width="102" height="98" rx="6" fill="url(#steel)" stroke="#1b1d21" stroke-width="2"/><rect x="14" y="14" width="82" height="78" rx="4" fill="#5b6068" stroke="#2a2d32" stroke-width="2"/><circle cx="55" cy="46" r="20" fill="#2b2e33" stroke="url(#brass)" stroke-width="3"/><circle cx="55" cy="46" r="12" fill="url(#steel)"/><path d="M55 46V36" stroke="#f2d77a" stroke-width="3"/><g stroke="#c9a24b"><path d="M55 28v3M73 46h-3M55 64v-3M37 46h3"/></g><rect x="38" y="74" width="34" height="8" rx="2" fill="#1d1f23"/><rect x="2" y="102" width="12" height="6" fill="#222"/><rect x="96" y="102" width="12" height="6" fill="#222"/>')
+};
+const ITEMS={
+ uv:{n:'紫外線ライト',i:'🔦',d:'特殊なライト。電池が入っていない。'},
+ bat:{n:'電池',i:'🔋',d:'単三電池。どこかに使えそうだ。'},
+ uvon:{n:'紫外線ライト(点灯可)',i:'💡',d:'電池を入れた紫外線ライト。隠された文字を照らせそうだ。'},
+ shaft:{n:'鍵の軸',i:'🔩',d:'金色の鍵の細い部分。頭の部分がない。'},
+ head:{n:'鍵の頭',i:'🔶',d:'金色の鍵の持ち手。軸の部分がない。'},
+ lh:{n:'手紙の左半分',i:'📄',d:'破れた手紙の左側。「最後の錠は、」で途切れている。'},
+ rh:{n:'手紙の右半分',i:'📃',d:'破れた手紙の右側。文頭が欠けている。'},
+ key:{n:'金の鍵',i:'🔑',d:'軸と頭を組み合わせた、金色の鍵。'},
+ letter:{n:'手紙',i:'✉️',d:'「最後の錠は、季節を逆にめぐれ。\nそして金の鍵で、この部屋を去るがいい。」'}
+};
+const COMBO={'head+shaft':'key','lh+rh':'letter','bat+uv':'uvon'};
+function say(t){$('msg').textContent=t}
+function turn(d){wall=(wall+d+4)%4;draw()}
+function draw(){document.querySelectorAll('.wall').forEach((w,i)=>w.classList.toggle('on',i==wall));$('wn').textContent=WALLS[wall]+'の壁'}
+function renderInv(){const e=$('inv');e.innerHTML='<span style="color:#666;font-size:12px">ITEMS</span>';
+ inv.forEach(k=>{const d=document.createElement('div');d.className='it'+(sel==k?' s':'');d.innerHTML=IC[k];d.title=ITEMS[k].n;
+  d.onclick=()=>{if(sel&&sel!=k){const c=COMBO[[sel,k].sort().join('+')]||COMBO[[k,sel].sort().join('+')];
+    if(c){inv=inv.filter(x=>x!=sel&&x!=k);sel=null;give(c,'組み合わせて『'+ITEMS[c].n+'』になった！');return}
+    say('この2つは組み合わせられない。');sel=k;renderInv();return}
+   sel=sel==k?null:k;say('【'+ITEMS[k].n+'】\n'+ITEMS[k].d);renderInv()};e.appendChild(d)})}
+function give(k,t){inv.push(k);sel=k;say(t||'『'+ITEMS[k].n+'』を手に入れた！');renderInv()}
+function use(k){if(sel==k){inv=inv.filter(x=>x!=k);sel=null;renderInv();return true}return false}
+function modal(h){$('box').innerHTML=h+'<div><button class="b" onclick="closeM()">閉じる</button></div>';$('modal').classList.add('on')}
+function closeM(){$('modal').classList.remove('on')}
+$('modal').onclick=e=>{if(e.target.id=='modal')closeM()};
+function dialUI(title,n,code,ok,type){dials={v:Array(n).fill(0)};
+ const r=()=>{$('box').innerHTML='<p style="text-align:center">'+title+'</p>'+dials.v.map((x,i)=>`<span class="dial"><button onclick="dp(${i},1)">▲</button><div>${x}</div><button onclick="dp(${i},-1)">▼</button></span>`).join('')+'<div><button class="b" onclick="dok()">決定</button><button class="b" onclick="closeM()">閉じる</button></div>';$('modal').classList.add('on')};
+ window.dp=(i,d)=>{dials.v[i]=(dials.v[i]+d+10)%10;r()};
+ window.dok=()=>{if(dials.v.join('')==code){closeM();ok()}else say('カチ…ッ。何も起こらない。数字が違うようだ。')+closeM()};r()}
+const S=(n,c)=>`<span class="bk" style="background:${c}"></span>`;
+const BOOKS=[['若葉の頃 第7巻','#2f7d3a',120,'g'],['赤い月 第3巻','#a32',100],['蒼い空 第2巻','#2a62b8',110,'b'],['黒い森 第9巻','#222',125],['実りの丘 第5巻','#d77a1e',105,'o'],['白い静寂 第8巻','#cfcfcf',115,'w'],['灰色の記録 第4巻','#666',95]];
+const ORDER=['g','b','o','w'];
+function shelf(){
+ $('box').innerHTML='<p style="text-align:center">本棚（背表紙を押し込める）</p><div style="height:150px;display:flex;align-items:flex-end;justify-content:center;border-bottom:6px solid #531">'+BOOKS.map((b,i)=>`<button class="bk${seq.includes(i)?' pr':''}" style="background:${b[1]};height:${b[2]}px;${b[1]=='#cfcfcf'?'color:#000':''}" onclick="push(${i})">${b[0]}</button>`).join('')+'</div><div><button class="b" onclick="closeM()">閉じる</button></div>';$('modal').classList.add('on')}
+function push(i){const b=BOOKS[i];if(F.shelf){say('『'+b[0]+'』。背表紙の巻数を確認した。');return}if(!b[3]){say('『'+b[0]+'』を押したが、何も起こらない。');seq=[];shelf();return}
+ if(seq.includes(i)){return}
+ seq.push(i);if(BOOKS[seq[seq.length-1]][3]!=ORDER[seq.length-1]){seq=[];say('ガコン…本がすべて元に戻ってしまった。順番が違う。');shelf();return}
+ if(seq.length==4){F.shelf=1;seq=[];closeM();give('uv','ゴゴゴ…本棚の奥が開き、『紫外線ライト』が現れた！\nだが電池が入っていない。')}else shelf()}
+const H=[ // wall,x,y,icon,label,fn
+[0,30,52,'shelf','本棚',shelf],
+[0,72,28,'clock','壁時計',()=>say('壁時計は3時47分で止まっている。\n電池切れのようだ。')],
+[0,75,68,'news','新聞',()=>say('古い新聞。「書斎の主、四季の物語を遺して失踪"\nという見出しが読める。')],
+[1,28,62,'diary','日記',()=>modal('<p>主人の日記。\n『読み終えた物語は、季節の巡りの順に並べておくのが私の癖だ。芽吹き、空、実り、そして静寂。\n引き出しの錠には、その巻数を使ってある。忘れぬよう…』</p>')],
+[1,62,62,'drawer','引き出し',()=>{if(F.drawer)return say('引き出しは空だ。');dialUI('4桁のダイヤル錠',4,'7258',()=>{F.drawer=1;give('bat','錠が外れた！中には電池、鍵の軸、破れた手紙の半分があった。');inv.push('shaft','lh');renderInv()})}],
+[1,80,25,'lamp','ランプ',()=>say('古いランプ。灯りは点かない。')],
+[2,50,56,'door','扉',()=>{if(sel=='key'){if(F.door)return;dialUI('扉の4桁錠（鍵は差し込み済み）',4,'8527',()=>{F.door=1;$('end').style.display='flex';$('endt').textContent='忘却の書斎からの脱出に成功した。'})}else say('重厚な扉だ。金色の鍵穴と、4桁の錠が見える。\n鍵がなければ話にならない。')}],
+[2,18,62,'fire','暖炉',()=>{if(sel=='uvon')say('灰に光を当てたが、何も浮かび上がらない。\nここは関係なさそうだ。');else say('冷え切った暖炉。灰しか残っていない。')}],
+[3,28,50,'paint','絵画',()=>{if(sel=='uvon'){F.paint=1;modal('<p>紫外線を当てると、絵の隅に文字が浮かんだ。</p><div class="uv">5 2 0 1</div><p class="uv" style="font-size:16px">鏡に映して読め</p>')}else if(F.paint)say('絵の隅に「5201」「鏡に映して読め」と浮かんでいる。');else say('冬枯れの森を描いた油絵。額縁の裏にも何もない。')}],
+[3,72,60,'safe','金庫',()=>{if(F.safe)return say('金庫は空だ。');dialUI('4桁の金庫',4,'1025',()=>{F.safe=1;give('head','金庫が開いた！『鍵の頭』と、破れた手紙の右半分が入っていた。');inv.push('rh');renderInv()})}]
+];
+const W={door:17,shelf:22,clock:11,news:15,diary:11,drawer:24,lamp:9,fire:28,paint:22,safe:20};
+const V=$('view');
+V.insertAdjacentHTML('afterbegin',DEFS);
+for(let w=0;w<4;w++){const d=document.createElement('div');d.className='wall';d.id='w'+w;d.innerHTML='<div class="floor"></div>';V.appendChild(d)}
+H.forEach(h=>{const b=document.createElement('button');b.className='hs';b.style.left=h[1]+'%';b.style.top=h[2]+'%';b.style.width='min('+W[h[3]]+'vw,'+W[h[3]]*6.2+'px)';b.innerHTML=OBJ[h[3]]+`<span class="l">${h[4]}</span>`;
+ b.onclick=()=>h[5]();$('w'+h[0]).appendChild(b)});
+const HINTS=['まず日記を読もう。本棚の背表紙もよく観察して。','本は日記の順番に押す。ライトに電池が必要。引き出しの数字は本の巻数。','紫外線ライトは絵画に。数字は鏡に映したように「逆に」読む。壁時計は関係ない。','扉の錠の数字は手紙に。手紙は2つの半分を組み合わせる。'];
+$('hint').onclick=()=>{let n=F.drawer?(F.safe?3:2):(F.shelf?1:0);say('ヒント：'+HINTS[n])};
+draw();renderInv();say('気がつくと、見知らぬ書斎にいた。\n壁を見回して、手がかりを探そう。\n（アイテムを2つ選んで組み合わせることもできる）');
+</script></body></html>
